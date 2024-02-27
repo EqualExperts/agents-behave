@@ -2,12 +2,13 @@ from datetime import datetime
 from unittest.mock import Mock
 
 import behave
+from agent_behave.conversation_analyzer import ConversationAnalyzer
+from agent_behave.llm_user import LLMUser
+from agent_behave.user_conversation import UserConversation
 from hamcrest import assert_that, greater_than
+
 from hotel_reservations.assistant import HotelReservationsAssistant
-from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
-from hotel_reservations.llm_user import LLMUser
-from hotel_reservations.user_conversation import UserConversation
 
 
 def format_date(date: str):

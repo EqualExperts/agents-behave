@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+
 from hotel_reservations.models_config import create_model_config
 
 load_dotenv()
