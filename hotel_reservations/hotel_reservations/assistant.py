@@ -11,6 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_function
+from langchain_openai import ChatOpenAI
 
 from hotel_reservations.core import FindHotels, MakeReservation
 from hotel_reservations.function_call_agent_output_parser import (
@@ -61,7 +62,11 @@ class HotelReservationsAssistant:
         tools = self.build_tools()
         functions = [convert_to_openai_function(tool) for tool in tools]
 
-        supports_functions = False
+        supports_functions = type(llm) == ChatOpenAI  # noqa E501
+        if supports_functions:
+            print("use native function")
+        else:
+            print("does not support functions")
         if supports_functions:
             llm = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
             prompt = prompt.partial(tools_prompt="")

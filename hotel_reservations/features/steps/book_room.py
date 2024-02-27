@@ -2,11 +2,11 @@ from datetime import datetime
 from unittest.mock import Mock
 
 import behave
-from agent_behave.conversation_analyzer import ConversationAnalyzer
-from agent_behave.llm_user import LLMUser
-from agent_behave.user_conversation import UserConversation
 from hamcrest import assert_that, greater_than
 
+from agents_behave.conversation_analyzer import ConversationAnalyzer
+from agents_behave.llm_user import LLMUser
+from agents_behave.user_conversation import UserConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 

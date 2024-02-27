@@ -1,6 +1,6 @@
 from typing import Callable
 
-from agent_behave.llm_user import LLMUser
+from agents_behave.llm_user import LLMUser
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
 Assistant = Callable[[str], str]
