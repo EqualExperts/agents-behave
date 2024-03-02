@@ -4,19 +4,25 @@ from unittest.mock import Mock
 from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
+from hotel_reservations.chat_open_router import ChatOpenRouter
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
 from hotel_reservations.user_agent_conversation import UserAgentConversation
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI  # noqa: F401
 
 load_dotenv()
 
 
 def create_llm() -> BaseLanguageModel:
-    llm = ChatOpenAI(
-        model="gpt-4-turbo-preview",
+    # llm = ChatOpenAI(
+    #     model="gpt-4-turbo-preview",
+    #     temperature=0.0,
+    # )
+    llm = ChatOpenRouter(
+        model="mistralai/mixtral-8x7b-instruct",
         temperature=0.0,
+        model_kwargs={"seed": 1234},
     )
     return llm
 
