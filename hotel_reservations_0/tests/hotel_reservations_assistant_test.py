@@ -26,7 +26,7 @@ def test_i_want_to_book_a_room():
     persona = """
         My name is Pedro Sousa.
         I want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
-        It will be for 2 adults and 1 child.
+        It will be for 2 adults.
     """
     user = LLMUser(persona=persona, llm=llm)
 
@@ -46,9 +46,8 @@ def test_i_want_to_book_a_room():
     conversation_state = conversation.start("I want to book a room")
 
     criteria = [
-        "Say hello to the user",
-        "Ask for all the information needed to make a reservation",
-        "Be very polite and helpful",
+        "Ask for the information needed to make a reservation",
+        "Be polite and helpful",
     ]
     conversation_analyzer = ConversationAnalyzer(llm=llm)
     report = conversation_analyzer.analyze(
@@ -63,5 +62,5 @@ def test_i_want_to_book_a_room():
         guest_name="Pedro Sousa",
         checkin_date=date(2024, 2, 9),
         checkout_date=date(2024, 2, 11),
-        guests=3,
+        guests=2,
     )

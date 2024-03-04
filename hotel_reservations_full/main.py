@@ -1,11 +1,12 @@
 from unittest.mock import Mock
 
-from agents_behave.conversation_analyzer import ConversationAnalyzer
-from agents_behave.llm_user import LLMUser
-from agents_behave.user_conversation import UserConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.models_config import create_model_config
+
+from agents_behave.conversation_analyzer import ConversationAnalyzer
+from agents_behave.llm_user import LLMUser
+from agents_behave.user_conversation import UserConversation
 
 
 def run():

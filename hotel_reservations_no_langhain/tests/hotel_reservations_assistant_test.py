@@ -6,20 +6,14 @@ from hamcrest import assert_that, greater_than
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
+from hotel_reservations.llms import LLMManager, OpenAIBaseLLM
 from hotel_reservations.user_agent_conversation import UserAgentConversation
-from langchain_core.language_models.base import BaseLanguageModel
-
-from hotel_reservations_1.hotel_reservations.chat_open_router import ChatOpenRouter
 
 load_dotenv()
 
 
-def create_llm() -> BaseLanguageModel:
-    llm = ChatOpenRouter(
-        model="mistralai/mixtral-8x7b-instruct",
-        temperature=0.0,
-        model_kwargs={"seed": 1234},
-    )
+def create_llm() -> OpenAIBaseLLM:
+    llm = LLMManager.create_llm(llm="openai-gpt-4")
     return llm
 
 

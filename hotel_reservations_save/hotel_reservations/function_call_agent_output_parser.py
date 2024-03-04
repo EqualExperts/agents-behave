@@ -16,7 +16,6 @@ class FunctionCallAgentOutputParser(BaseOutputParser):
         return self._parse_ai_text(content)
 
     def _parse_ai_text(self, text: str) -> Union[AgentAction, AgentFinish]:
-        text = text.strip().replace("\\_", "_")
         pattern = r'\{\s*"function_call":\s*\{.*?\}\s*\}\s*\}'
         matches = re.findall(pattern, text, re.DOTALL)
         if matches:
@@ -25,15 +24,11 @@ class FunctionCallAgentOutputParser(BaseOutputParser):
             tool_input = function_call["arguments"]
             content_msg = f"responded: {text}\n" if text else "\n"
             log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
-            content_msg = text.replace(matches[0], "")
-            print(f"text: {text}")
-            print(f"matches: {matches[0]}")
-            print(f"content_msg: {content_msg}")
             result = AgentActionMessageLog(
                 tool=function_name,
                 tool_input=tool_input,
                 log=log,
-                message_log=[AIMessage(content=content_msg)],
+                message_log=[AIMessage(content=text)],
             )
 
         else:

@@ -36,15 +36,13 @@ class LLMUser:
 
 
 USER_PROMPT = """
-    Your role is to simulate a user that asked an Assistant to do a task. 
-    Remember, you are not the Assistant, you are the user.
+    Your role is to simulate a user that asked an Assistant to do a task. Remember, you are not the Assistant, you are the user.
     If you don't know the answer, just pick a random one.
 
     Here is some information about you:
     {persona}
 
-    When the Assistant finishes the task, it will not ask a question, it will just give you the result.
-    You should then say "bye" to the Assistant to end the conversation.
+    You should say "bye" when you are done.
 
     Conversation:
     {chat_history}

@@ -4,17 +4,21 @@ from unittest.mock import Mock
 from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
+from hotel_reservations.chat_open_router import ChatOpenRouter
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
 from hotel_reservations.user_agent_conversation import UserAgentConversation
 from langchain_core.language_models.base import BaseLanguageModel
-
-from hotel_reservations_1.hotel_reservations.chat_open_router import ChatOpenRouter
+from langchain_openai import ChatOpenAI  # noqa: F401
 
 load_dotenv()
 
 
 def create_llm() -> BaseLanguageModel:
+    # llm = ChatOpenAI(
+    #     model="gpt-4-turbo-preview",
+    #     temperature=0.0,
+    # )
     llm = ChatOpenRouter(
         model="mistralai/mixtral-8x7b-instruct",
         temperature=0.0,
@@ -28,7 +32,7 @@ def test_i_want_to_book_a_room():
     persona = """
         My name is Pedro Sousa.
         I want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
-        It will be for 2 adults.
+        It will be for 2 adults and 1 child.
     """
     user = LLMUser(persona=persona, llm=llm)
 
@@ -48,8 +52,9 @@ def test_i_want_to_book_a_room():
     conversation_state = conversation.start("I want to book a room")
 
     criteria = [
-        "Ask for the information needed to make a reservation",
-        "Be polite and helpful",
+        "Say hello to the user",
+        "Ask for all the information needed to make a reservation",
+        "Be very polite and helpful",
     ]
     conversation_analyzer = ConversationAnalyzer(llm=llm)
     report = conversation_analyzer.analyze(
@@ -64,5 +69,5 @@ def test_i_want_to_book_a_room():
         guest_name="Pedro Sousa",
         checkin_date=date(2024, 2, 9),
         checkout_date=date(2024, 2, 11),
-        guests=2,
+        guests=3,
     )
