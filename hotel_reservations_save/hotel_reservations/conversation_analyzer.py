@@ -18,9 +18,9 @@ class ConversationAnalyzer:
         self.chain = self.build_chain(llm)
 
     def analyze(
-        self, conversation: ChatMessageHistory, criteria: list[str] = []
+        self, conversation: ChatMessageHistory, criteria: list[str] | None = None
     ) -> ConversationReport:
-        criteria_str = "\n".join([f"- {c}" for c in criteria])
+        criteria_str = "\n".join([f"- {c}" for c in criteria or []])
         conversation_str = "\n".join([m.pretty_repr() for m in conversation.messages])
         response = self.chain.invoke(
             {"conversation": conversation_str, "criteria": criteria_str}

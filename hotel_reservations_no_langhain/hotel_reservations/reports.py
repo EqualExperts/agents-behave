@@ -1,10 +1,5 @@
-from hotel_reservations.messages import LLMMessage, LLMMessages
-from openai.types.chat import (
-    ChatCompletion,
-    ChatCompletionMessage,
-    ChatCompletionMessageToolCall,
-    ChatCompletionToolParam,
-)
+from hotel_reservations.messages import ChatResponseMessage, LLMMessage, LLMMessages
+from openai.types.chat import ChatCompletionMessageToolCall, ChatCompletionToolParam
 
 
 class Report:
@@ -50,7 +45,7 @@ class ToolCallsReport(Report):
 
 
 class ChatCompletionMessageReport(Report):
-    def __init__(self, message: ChatCompletionMessage):
+    def __init__(self, message: ChatResponseMessage):
         super().__init__(
             "chat_completion_message",
             {
@@ -60,16 +55,5 @@ class ChatCompletionMessageReport(Report):
                     if message.tool_calls
                     else None
                 ),
-            },
-        )
-
-
-class ChatCompletionReport(Report):
-    def __init__(self, completion: ChatCompletion):
-        super().__init__(
-            "chat_completion",
-            {
-                "choices": ChatCompletionMessageReport(completion.choices[0].message),
-                "model": completion.model,
             },
         )

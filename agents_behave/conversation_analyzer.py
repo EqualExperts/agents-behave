@@ -10,11 +10,13 @@ class ConversationAnalyzer:
     def __init__(self, llm: BaseLanguageModel):
         self.chain = self.build_chain(llm)
 
-    def invoke(self, chat_history: list[BaseMessage], criteria: list[str] = []):
+    def invoke(
+        self, chat_history: list[BaseMessage], criteria: list[str] | None = None
+    ):
         conversation = ChatMessageHistory()
         for c in chat_history:
             conversation.add_message(c)
-        criteria_str = "\n".join([f"- {c}" for c in criteria])
+        criteria_str = "\n".join([f"- {c}" for c in criteria or []])
         response = self.chain.invoke(
             {"conversation": conversation, "criteria": criteria_str}
         )

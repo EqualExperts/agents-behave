@@ -3,15 +3,13 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable
 
+from hotel_reservations.llms import BaseLLM
 from hotel_reservations.messages import (
     AssistantMessage,
-    LLMMessage,
     LLMMessages,
     SystemMessage,
     UserMessage,
 )
-
-from hotel_reservations_no_langhain.hotel_reservations.llms import OpenAIBaseLLM
 
 MakeReservation = Callable[[str, str, date, date, int], bool]
 
@@ -91,7 +89,7 @@ class HotelReservationsAssistant:
     def __init__(
         self,
         make_reservation: MakeReservation,
-        llm: OpenAIBaseLLM,
+        llm: BaseLLM,
     ):
         self.make_reservation = make_reservation
         self.chat_history = LLMMessages()
@@ -102,11 +100,14 @@ class HotelReservationsAssistant:
 
     def chat(self, query: str) -> str:
         prompt = SYSTEM_PROMPT
-        # prompt = prompt.format(
-        #     tools_prompt=TOOLS_PROMPT.format(
-        #         tools=json.dumps([make_reservation_tool], indent=4)
-        #     )
-        # )
+        tools_prompt = (
+            ""
+            if self.llm.supports_function_calling()
+            else TOOLS_PROMPT.format(
+                tools=json.dumps([make_reservation_tool], indent=4)
+            )
+        )
+        prompt = prompt.format(tools_prompt=tools_prompt)
         messages = LLMMessages(
             [
                 SystemMessage(prompt),
@@ -115,13 +116,18 @@ class HotelReservationsAssistant:
             ]
         )
         tools = [make_reservation_tool]
-        completion = self.llm.chat_completions(messages=messages, tools=tools)  # type: ignore
-        response = completion.choices[0]
-        if response.message.tool_calls:
-            tool_call = response.message.tool_calls[0]
+        message = self.llm.chat_completions(messages=messages, tools=tools)  # type: ignore
+        if message.tool_calls:
+            tool_call = message.tool_calls[0]
             if tool_call.function.name == "make_reservation":
                 arguments = tool_call.function.arguments
-                json_arguments: dict = json.loads(arguments)
+                json_arguments = json.loads(arguments)
+                json_arguments["checkin_date"] = date.fromisoformat(
+                    json_arguments["checkin_date"]
+                )
+                json_arguments["checkout_date"] = date.fromisoformat(
+                    json_arguments["checkout_date"]
+                )
                 tool_result = self.make_reservation(**json_arguments)  # type: ignore
                 if tool_result:
                     response_message = AssistantMessage(
@@ -133,9 +139,7 @@ class HotelReservationsAssistant:
                     )
                 self.chat_history.add_message(response_message)
         else:
-            response_message = LLMMessage.from_openai_message(
-                completion.choices[0].message
-            )
+            response_message = AssistantMessage(content=message.content)
         self.chat_history.add_message(response_message)
 
         return response_message.content or ""
@@ -143,6 +147,10 @@ class HotelReservationsAssistant:
 
 SYSTEM_PROMPT = """
 You are a helpful hotel reservations assistant.
+You should not come up with any information, if you don't know something, just ask the user for more information or use a tool.
+The name of the guest is mandatory to make the reservation.
+
+{tools_prompt}
 """  # noqa E501
 
 

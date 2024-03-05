@@ -1,10 +1,7 @@
 from typing import Callable
 
-from hotel_reservations_no_langhain.hotel_reservations.llms import (
-    LLMMessages,
-    OpenAIBaseLLM,
-)
 from hotel_reservations.llm_user import LLMUser
+from hotel_reservations.llms import BaseLLM, LLMMessages
 from hotel_reservations.messages import AssistantMessage, LLMMessage, UserMessage
 
 Assistant = Callable[[str], str]
@@ -37,7 +34,7 @@ class UserAgentConversation:
         self,
         user: LLMUser,
         assistant: Assistant,
-        llm: OpenAIBaseLLM,
+        llm: BaseLLM,
         stop_condition: Callable[
             [UserAgentConversationState], bool
         ] = stop_on_max_iterations(10),
@@ -49,10 +46,11 @@ class UserAgentConversation:
 
         self.state = UserAgentConversationState()
 
-    def start(self, query: str) -> UserAgentConversationState:
+    def start(self, user_message: str) -> UserAgentConversationState:
+        self.user.start(user_message)
         self.state = UserAgentConversationState()
-        self.state.add_message(UserMessage(content=query))
-        user_response = query
+        self.state.add_message(UserMessage(content=user_message))
+        user_response = user_message
         done = False
         while not done:
             llm_response = self.assistant(user_response)

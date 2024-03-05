@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from dataclasses import asdict
 
 from colorama import Fore, Style
-from hotel_reservations.messages import LLMMessages
+from hotel_reservations.messages import ChatResponseMessage, LLMMessages
 from hotel_reservations.reports import (
-    ChatCompletionReport,
+    MessageReport,
     MessagesReport,
     Report,
     ToolParamReport,
@@ -26,7 +27,8 @@ class LLMCallbacks(ABC):
         self,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
-        response: ChatCompletion,
+        llm_response: dict,
+        response: ChatResponseMessage,
     ):
         pass
 
@@ -39,6 +41,7 @@ class NoOpLLMCallbacks(LLMCallbacks):
         self,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
+        llm_response: dict,
         response: ChatCompletion,
     ):
         pass
@@ -47,19 +50,23 @@ class NoOpLLMCallbacks(LLMCallbacks):
 class ConsoleLLMCallbacks(LLMCallbacks):
     def on_create(self, llm):
         self.output("LLM created")
-        self.report(Report("LLM Config", llm.llm_config.__dict__))
+        no_key = asdict(llm.llm_config)
+        no_key.pop("api_key")
+        self.report(Report("LLM Config", no_key))
 
     def on_chat_completions(
         self,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
-        response: ChatCompletion,
+        llm_response: dict,
+        message: ChatResponseMessage,
     ):
         self.report(MessagesReport(messages))
         if tools:
             for tool in tools:
                 self.report(ToolParamReport(tool))
-        self.report(ChatCompletionReport(response))
+        self.report(Report("LLM Response", llm_response))
+        self.report(MessageReport(message))
 
     def report(self, report: Report, ident=0):
         self.output("-" * 80)
@@ -72,7 +79,6 @@ class ConsoleLLMCallbacks(LLMCallbacks):
                     f"{Style.BRIGHT}{Fore.MAGENTA}{k}: {Fore.LIGHTBLUE_EX}{v}{Style.RESET_ALL}",
                     ident=ident + 4,
                 )
-        self.output("-" * 80)
 
     def title(self, message: str, ident=0):
         self.output(f"{Fore.BLUE}{message}{Style.RESET_ALL}", ident=ident)

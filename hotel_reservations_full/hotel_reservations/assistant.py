@@ -2,6 +2,13 @@ import json
 from datetime import date
 from typing import Any
 
+from hotel_reservations.core import FindHotels, MakeReservation
+from hotel_reservations.function_call_agent_output_parser import (
+    FunctionCallAgentOutputParser,
+)
+from hotel_reservations.open_ai_functions_agent_output_parser_copy import (
+    OpenAIFunctionsAgentOutputParser_Copy,
+)
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.pydantic_v1 import BaseModel, Field
@@ -12,14 +19,6 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_openai import ChatOpenAI
-
-from hotel_reservations.core import FindHotels, MakeReservation
-from hotel_reservations.function_call_agent_output_parser import (
-    FunctionCallAgentOutputParser,
-)
-from hotel_reservations.open_ai_functions_agent_output_parser_copy import (
-    OpenAIFunctionsAgentOutputParser_Copy,
-)
 
 
 class MakeReservationInput(BaseModel):
@@ -68,7 +67,7 @@ class HotelReservationsAssistant:
         else:
             print("does not support functions")
         if supports_functions:
-            llm = llm.bind(functions=[convert_to_openai_function(t) for t in tools])
+            llm = llm.bind(functions=functions)
             prompt = prompt.partial(tools_prompt="")
             parser = OpenAIFunctionsAgentOutputParser_Copy()
         else:

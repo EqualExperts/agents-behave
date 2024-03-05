@@ -8,7 +8,6 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 behave = "^1.2.6"
-fastapi = "^0.110.0"
 flake8 = "^7.0.0"
 httpx = "^0.27.0"
 langchain = "^0.1.9"
@@ -19,9 +18,12 @@ pyhamcrest = "^2.1.0"
 pytest = "^8.0.1"
 python-dotenv = "^1.0.1"
 ruff = "^0.2.2"
-uvicorn = "^0.27.1"
 openai = "^1.13.3"
 colorama = "^0.4.6"
+uvicorn = "0.22.0"
+fastapi = "0.104.1"
+litellm = {extras = ["proxy"], version = "^1.28.13"}
+langfuse = "^2.19.1"
 
 
 [build-system]

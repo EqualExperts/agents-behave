@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 
-from colorama import Style
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
-    ChatCompletionMessage,
     ChatCompletionMessageParam,
     ChatCompletionMessageToolCall,
     ChatCompletionSystemMessageParam,
@@ -20,29 +18,14 @@ class LLMMessage(ABC):
         return {"role": self.role.upper(), "content": self.content}
 
     def __repr__(self):
-        return f"{Style.BRIGHT}{self.role}{Style.RESET_ALL}: {self.content}"
+        return f"{self.role}: {self.content}"
 
     def __str__(self):
-        return self.__repr__()
+        return f"{self.role.upper()}: {self.content}"
 
     @abstractmethod
     def to_openai_message(self) -> ChatCompletionMessageParam:
         pass
-
-    @classmethod
-    def from_openai_message(
-        cls, message: ChatCompletionMessageParam | ChatCompletionMessage
-    ):
-        if message is ChatCompletionSystemMessageParam:
-            return SystemMessage(message.content)
-        elif message is ChatCompletionUserMessageParam:
-            return UserMessage(message.content)
-        elif message is ChatCompletionAssistantMessageParam:
-            return AssistantMessage(message.content)
-        elif isinstance(message, ChatCompletionMessage):
-            return AssistantMessage(message.content, message.tool_calls)
-        else:
-            raise ValueError(f"Unknown message type: {type(message)}")
 
 
 class SystemMessage(LLMMessage):
@@ -67,6 +50,19 @@ class AssistantMessage(LLMMessage):
     def __init__(
         self,
         content: str | None,
+    ):
+        super().__init__("assistant", content)
+
+    def to_openai_message(self):
+        return ChatCompletionAssistantMessageParam(
+            role="assistant", content=self.content
+        )
+
+
+class ChatResponseMessage(LLMMessage):
+    def __init__(
+        self,
+        content: str | None,
         tool_calls: list[ChatCompletionMessageToolCall] | None = None,
     ):
         super().__init__("assistant", content)
@@ -79,8 +75,8 @@ class AssistantMessage(LLMMessage):
 
 
 class LLMMessages:
-    def __init__(self, messages: list[LLMMessage] = []):
-        self.messages = messages
+    def __init__(self, messages: list[LLMMessage] | None = None):
+        self.messages = messages if messages is not None else []
 
     def __iter__(self):
         return iter(self.messages)

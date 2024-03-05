@@ -1,42 +1,47 @@
-from hotel_reservations_no_langhain.hotel_reservations.llms import OpenAIBaseLLM
-from hotel_reservations.messages import LLMMessages, SystemMessage, UserMessage
+from hotel_reservations.llms import BaseLLM
+from hotel_reservations.messages import (
+    AssistantMessage,
+    LLMMessages,
+    SystemMessage,
+    UserMessage,
+)
 
 
 class LLMUser:
-    def __init__(self, persona: str, llm: OpenAIBaseLLM):
+    def __init__(self, persona: str, llm: BaseLLM):
         self.persona = persona
         self.llm = llm
         self.chat_history = LLMMessages()
 
-    def chat(self, user_message: str) -> str:
-        prompt = USER_PROMPT.format(
-            persona=self.persona,
-            chat_history=self.chat_history,
-        )
+    def start(self, user_message: str):
+        self.chat_history.add_message(UserMessage(user_message))
+
+    def chat(self, llm_response: str) -> str:
+        prompt = SYSTEM_PROMPT.format(persona=self.persona)
+        llm_message = AssistantMessage(llm_response)
+        self.chat_history.add_message(llm_message)
         messages = LLMMessages(
             [
                 SystemMessage(prompt),
                 *self.chat_history.messages,
-                UserMessage(user_message),
             ]
         )
-        completion = self.llm.chat_completions(
-            messages=messages,
-        )
-        content = completion.choices[0].message.content or "{}"
+        user_response = self.llm.chat_completions(messages=messages)
+        content = user_response.content or ""
+        self.chat_history.add_message(UserMessage(content))
         return content
 
 
-USER_PROMPT = """
-    Your role is to simulate a user that asked an Assistant to do a task. Remember, you are not the Assistant, you are the user.
+SYSTEM_PROMPT = """
+    Your role is to simulate a User that asked an Assistant to do a task. Remember, you are the User, not the Assistant.
     If you don't know the answer, just pick a random one.
 
     Here is some information about you:
+    ---------------------------------------------
     {persona}
+    ---------------------------------------------
 
-    You should say "bye" when you are done.
-
-    Conversation:
-    {chat_history}
+    When the Assistant finishes the task, it will not ask a question, it will just give you the result.
+    You should then say "bye" to the Assistant to end the conversation.
     -------------
     """  # noqa E501

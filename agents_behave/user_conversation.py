@@ -1,14 +1,15 @@
 from typing import Callable
 
-from agents_behave.llm_user import LLMUser
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+
+from agents_behave.llm_user import LLMUser
 
 Assistant = Callable[[str], str]
 
 
 class UserConversationState:
-    def __init__(self, chat_history: list[BaseMessage] = []):
-        self.chat_history = chat_history
+    def __init__(self, chat_history: list[BaseMessage] | None = None):
+        self.chat_history = chat_history or []
 
     def add_message(self, message: BaseMessage):
         self.chat_history.append(message)
@@ -31,9 +32,9 @@ class UserConversation:
 
         self.state = UserConversationState()
 
-    def start_conversation(self, query: str):
-        self.state.add_message(HumanMessage(content=query))
-        user_response = query
+    def start_conversation(self, user_message: str):
+        self.state.add_message(HumanMessage(content=user_message))
+        user_response = user_message
         iterations = 0
         done = False
         while not done:
