@@ -1,69 +1,76 @@
 import json
 import sys
 from dataclasses import asdict
+from typing import cast
 
 import litellm
+from colorama import Fore
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
 from hotel_reservations.callbacks import ConsoleLLMCallbacks
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
-from hotel_reservations.llms import LLMConfig, LLMManager
+from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 from hotel_reservations.user_agent_conversation import UserAgentConversation
 
 litellm.success_callback = ["langfuse"]
 
 
-def assistant(llm):
+def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
     callbacks = ConsoleLLMCallbacks()
-    llm = LLMManager.create_llm(
-        llm=llm,
+    return LLMManager.create_llm(
+        llm_name=llm_name,
         llm_config=LLMConfig(
+            name=name,
             temperature=0.0,
             callbacks=callbacks,
         ),
     )
-    assistant = HotelReservationsAssistant(make_reservation=make_reservation, llm=llm)
+
+
+def assistant(llm_name: LLMS):
+    assistant = HotelReservationsAssistant(
+        make_reservation=make_reservation,
+        llm=create_llm(llm_name, "assistant"),
+    )
     assistant.chat("I want to book a room")
     assistant.chat(
         "My name is Pedro Sousa, It's the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11. It will be for 2 adults."  # noqa E501
     )
 
 
-def conversation(llm):
-    callbacks = ConsoleLLMCallbacks()
-    llm = LLMManager.create_llm(
-        llm=llm,
-        llm_config=LLMConfig(
-            temperature=0.0,
-            callbacks=callbacks,
-        ),
-    )
+def conversation(llm_name: LLMS):
     persona = """
-        My name is Pedro Sousa.
-        I want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
+        Your name is Pedro Sousa.
+        You want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
         It will be for 2 adults.
     """
-    user = LLMUser(persona=persona, llm=llm)
+    user = LLMUser(
+        persona=persona,
+        llm=create_llm(llm_name, "LLMUser"),
+    )
 
     assistant = HotelReservationsAssistant(
         make_reservation=make_reservation,
-        llm=llm,
+        llm=create_llm(llm_name, "Assistant"),
     )
 
     conversation = UserAgentConversation(
         user,
         assistant,
-        llm=llm,
+        llm=create_llm(llm_name, "UserAgentConversation"),
         stop_condition=lambda state: state.iterations_count >= 10
-        or "bye" in str(state.last_message().content).lower(),
+        or state.last_assistant_message_contains("bye"),
     )
-    conversation_state = conversation.start("I want to book a room")
+    conversation_state = conversation.start()
 
     criteria = [
-        "Ask for the information needed to make a reservation",
-        "Be polite and helpful",
+        "Ask for the information needed to make a reservation. No need to ask for anything else.",
+        "Ask for confirmation before making the reservation.",
+        "Be polite and helpful.",
     ]
-    conversation_analyzer = ConversationAnalyzer(llm=llm)
+    conversation_analyzer = ConversationAnalyzer(
+        llm=create_llm(llm_name, "ConversationAnalyzer"),
+    )
     report = conversation_analyzer.analyze(
         conversation=conversation_state.chat_history,
         criteria=criteria,
@@ -77,26 +84,39 @@ def conversation(llm):
     print(json.dumps(asdict(report), indent=4))
 
 
-def test(llm):
-    callbacks = ConsoleLLMCallbacks()
-    llm = LLMManager.create_llm(
-        llm=llm,
-        llm_config=LLMConfig(
-            temperature=0.0,
-            callbacks=callbacks,
-        ),
-    )
+def test(llm_name: LLMS):
+    llm = create_llm(llm_name, "LLMUser")
     persona = """
-        My name is Pedro Sousa.
-        I want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
+        Your name is Pedro Sousa.
+        You want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
         It will be for 2 adults.
     """
     user = LLMUser(persona=persona, llm=llm)
-    user.chat("hello")
-    user.chat("I'm Pedro")
+    user.start()
+    c = user.chat(
+        """
+Sure, I'd be happy to help you with that! Could you please provide me with the following information:
+
+1. The name of the guest
+2. The name of the hotel
+3. The check-in date (format: YYYY-MM-DD)
+4. The check-out date (format: YYYY-MM-DD)
+5. The number of guests
+
+Once I have this information, I can make the reservation for you.
+              """
+    )
+    print(c)
 
 
 if __name__ == "__main__":
-    llm = sys.argv[1] if len(sys.argv) > 1 else "openrouter-mixtral"
-    conversation(llm)
-    # print(litellm.supports_function_calling("mistralai/mixtral-8x7b-instruct"))
+    print(f"{Fore.GREEN} ###  #####   #   ####  #####{Fore.RESET}")
+    print(f"{Fore.GREEN}#   #   #    # #  #   #   #  {Fore.RESET}")
+    print(f"{Fore.GREEN}#       #   #   # #   #   #  {Fore.RESET}")
+    print(f"{Fore.GREEN} ###    #   #   # ####    #  {Fore.RESET}")
+    print(f"{Fore.GREEN}    #   #   ##### # #     #  {Fore.RESET}")
+    print(f"{Fore.GREEN}#   #   #   #   # #  #    #  {Fore.RESET}")
+    print(f"{Fore.GREEN} ###    #   #   # #   #   #  {Fore.RESET}")
+
+    llm_name = sys.argv[1] if len(sys.argv) > 1 else "openrouter-mixtral"
+    conversation(cast(LLMS, llm_name))

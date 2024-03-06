@@ -1,8 +1,7 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
-    ChatCompletionMessageParam,
     ChatCompletionMessageToolCall,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -14,18 +13,11 @@ class LLMMessage(ABC):
         self.role = role
         self.content = content
 
-    def to_dict(self):
-        return {"role": self.role.upper(), "content": self.content}
-
     def __repr__(self):
         return f"{self.role}: {self.content}"
 
     def __str__(self):
         return f"{self.role.upper()}: {self.content}"
-
-    @abstractmethod
-    def to_openai_message(self) -> ChatCompletionMessageParam:
-        pass
 
 
 class SystemMessage(LLMMessage):
@@ -42,9 +34,6 @@ class UserMessage(LLMMessage):
     def __init__(self, content: str):
         super().__init__("user", content)
 
-    def to_openai_message(self):
-        return ChatCompletionUserMessageParam(role="user", content=self.content or "")
-
 
 class AssistantMessage(LLMMessage):
     def __init__(
@@ -52,11 +41,6 @@ class AssistantMessage(LLMMessage):
         content: str | None,
     ):
         super().__init__("assistant", content)
-
-    def to_openai_message(self):
-        return ChatCompletionAssistantMessageParam(
-            role="assistant", content=self.content
-        )
 
 
 class ChatResponseMessage(LLMMessage):
@@ -67,11 +51,6 @@ class ChatResponseMessage(LLMMessage):
     ):
         super().__init__("assistant", content)
         self.tool_calls = tool_calls or []
-
-    def to_openai_message(self):
-        return ChatCompletionAssistantMessageParam(
-            role="assistant", content=self.content
-        )
 
 
 class LLMMessages:
@@ -84,5 +63,18 @@ class LLMMessages:
     def add_message(self, message: LLMMessage):
         self.messages.append(message)
 
-    def to_openai_messages(self):
-        return [message.to_openai_message() for message in self.messages]
+
+def to_openai_messages(messages: LLMMessages):
+    return [to_openai_message(message) for message in messages]
+
+
+def to_openai_message(message: LLMMessage):
+    content = message.content or ""
+    if isinstance(message, SystemMessage):
+        return ChatCompletionSystemMessageParam(role="system", content=content)
+    elif isinstance(message, UserMessage):
+        return ChatCompletionUserMessageParam(role="user", content=content)
+    elif isinstance(message, AssistantMessage):
+        return ChatCompletionAssistantMessageParam(role="assistant", content=content)
+    else:
+        raise ValueError(f"Unexpected message type: {message}")

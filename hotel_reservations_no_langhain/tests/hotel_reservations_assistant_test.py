@@ -6,7 +6,7 @@ from hamcrest import assert_that, greater_than
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
-from hotel_reservations.llms import LLMConfig, LLMManager
+from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 from hotel_reservations.user_agent_conversation import UserAgentConversation
 
 from hotel_reservations_no_langhain.hotel_reservations.callbacks import (
@@ -15,37 +15,43 @@ from hotel_reservations_no_langhain.hotel_reservations.callbacks import (
 
 load_dotenv()
 
+default_llm_name: LLMS = "litellm-mixtral"
 
-def test_i_want_to_book_a_room():
+
+def create_llm(name: str, llm_name: LLMS = default_llm_name) -> BaseLLM:
     callbacks = ConsoleLLMCallbacks()
-    llm = LLMManager.create_llm(
-        llm="openrouter-mixtral",
+    return LLMManager.create_llm(
+        llm_name=llm_name,
         llm_config=LLMConfig(
+            name=name,
             temperature=0.0,
             callbacks=callbacks,
         ),
     )
+
+
+def test_i_want_to_book_a_room():
     persona = """
-        My name is Pedro Sousa.
-        I want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
+        Your name is Pedro Sousa.
+        You want to book a room in the Hilton Hotel, starting in 2024-02-09 and ending in 2024-02-11.
         It will be for 2 adults.
     """
-    user = LLMUser(persona=persona, llm=llm)
+    user = LLMUser(persona=persona, llm=create_llm("LLMUser"))
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
     assistant = HotelReservationsAssistant(
         make_reservation=make_reservation_mock,
-        llm=llm,
+        llm=create_llm("Assistant"),
     )
 
     conversation = UserAgentConversation(
         user,
         assistant,
-        llm=llm,
+        llm=create_llm("UserAgentConversation"),
         stop_condition=lambda state: state.iterations_count >= 10
         or "bye" in str(state.last_message().content).lower(),
     )
-    conversation_state = conversation.start("I want to book a room")
+    conversation_state = conversation.start()
 
     print("-" * 80)
     for message in conversation_state.chat_history.messages:
@@ -53,10 +59,11 @@ def test_i_want_to_book_a_room():
     print("-" * 80)
 
     criteria = [
-        "Ask for the information needed to make a reservation",
-        "Be polite and helpful",
+        "Ask for the information needed to make a reservation. No need to ask for anything else.",
+        "Ask for confirmation before making the reservation.",
+        "Be polite and helpful.",
     ]
-    conversation_analyzer = ConversationAnalyzer(llm=llm)
+    conversation_analyzer = ConversationAnalyzer(llm=create_llm("ConversationAnalyzer"))
     report = conversation_analyzer.analyze(
         conversation=conversation_state.chat_history,
         criteria=criteria,

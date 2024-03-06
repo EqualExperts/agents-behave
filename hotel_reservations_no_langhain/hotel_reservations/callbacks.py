@@ -25,6 +25,7 @@ class LLMCallbacks(ABC):
     @abstractmethod
     def on_chat_completions(
         self,
+        llm,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
         llm_response: dict,
@@ -39,6 +40,7 @@ class NoOpLLMCallbacks(LLMCallbacks):
 
     def on_chat_completions(
         self,
+        llm,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
         llm_response: dict,
@@ -56,11 +58,15 @@ class ConsoleLLMCallbacks(LLMCallbacks):
 
     def on_chat_completions(
         self,
+        llm,
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven,
         llm_response: dict,
         message: ChatResponseMessage,
     ):
+        self.output(
+            f"---- {llm.llm_config.name}{'-' * 80}", color=Fore.YELLOW + Style.BRIGHT
+        )
         self.report(MessagesReport(messages))
         if tools:
             for tool in tools:
@@ -78,13 +84,24 @@ class ConsoleLLMCallbacks(LLMCallbacks):
                 self.details(
                     f"{Style.BRIGHT}{Fore.MAGENTA}{k}: {Fore.LIGHTBLUE_EX}{v}{Style.RESET_ALL}",
                     ident=ident + 4,
+                    line_ident=ident + 4 + len(k) + 2,
                 )
 
     def title(self, message: str, ident=0):
         self.output(f"{Fore.BLUE}{message}{Style.RESET_ALL}", ident=ident)
 
-    def details(self, message: str, ident=0):
-        self.output(message, ident=ident)
+    def details(self, message: str, ident=0, line_ident=0):
+        idented_message = self.justify(message).replace("\n", f"\n{' ' * line_ident}")
+        self.output(idented_message, ident=ident)
 
     def output(self, message: str, color: str = Fore.GREEN, ident=0):
         print(f"{' ' * ident}{color}{message}{Style.RESET_ALL}")
+
+    def justify(self, message: str, width=150):
+        lines = message.split("\n")
+        splitted_lines = [self.chunk(line, width) for line in lines]
+        flatted_lines = [line for lines in splitted_lines for line in lines]
+        return "\n".join(flatted_lines)
+
+    def chunk(self, line: str, width):
+        return [line[i : i + width] for i in range(0, len(line), width)]  # noqa E203

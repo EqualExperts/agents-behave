@@ -1,6 +1,6 @@
 from typing import Callable
 
-from hotel_reservations.llm_user import LLMUser
+from hotel_reservations.llm_user import User
 from hotel_reservations.llms import BaseLLM, LLMMessages
 from hotel_reservations.messages import AssistantMessage, LLMMessage, UserMessage
 
@@ -8,10 +8,10 @@ Assistant = Callable[[str], str]
 
 
 def stop_on_max_iterations(max_iterations: int):
-    def default_stop_condition_0(state: UserAgentConversationState) -> bool:
+    def stop_on_max_iterations_fn(state: UserAgentConversationState) -> bool:
         return state.iterations_count >= max_iterations
 
-    return default_stop_condition_0
+    return stop_on_max_iterations_fn
 
 
 class UserAgentConversationState:
@@ -28,11 +28,25 @@ class UserAgentConversationState:
     def last_message(self) -> LLMMessage:
         return self.chat_history.messages[-1]
 
+    def last_assistant_message(self) -> LLMMessage | None:
+        return next(
+            (
+                message
+                for message in reversed(self.chat_history.messages)
+                if isinstance(message, AssistantMessage)
+            ),
+            None,
+        )
+
+    def last_assistant_message_contains(self, s: str) -> bool:
+        a = self.last_assistant_message()
+        return s.lower() in a.content.lower() if a and a.content else False
+
 
 class UserAgentConversation:
     def __init__(
         self,
-        user: LLMUser,
+        user: User,
         assistant: Assistant,
         llm: BaseLLM,
         stop_condition: Callable[
@@ -46,13 +60,12 @@ class UserAgentConversation:
 
         self.state = UserAgentConversationState()
 
-    def start(self, user_message: str) -> UserAgentConversationState:
-        self.user.start(user_message)
+    def start(self) -> UserAgentConversationState:
+        user_message = self.user.start()
         self.state = UserAgentConversationState()
         self.state.add_message(UserMessage(content=user_message))
         user_response = user_message
-        done = False
-        while not done:
+        while not self.stop_condition(self.state):
             llm_response = self.assistant(user_response)
             user_response = self.user.chat(llm_response)
 
@@ -60,6 +73,5 @@ class UserAgentConversation:
             self.state.add_message(UserMessage(content=user_response))
 
             self.state.increment_iterations()
-            done = self.stop_condition(self.state)
 
         return self.state

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable
 
+from colorama import Fore
 from hotel_reservations.llms import BaseLLM
 from hotel_reservations.messages import (
     AssistantMessage,
@@ -10,6 +11,7 @@ from hotel_reservations.messages import (
     SystemMessage,
     UserMessage,
 )
+from openai._types import NOT_GIVEN
 
 MakeReservation = Callable[[str, str, date, date, int], bool]
 
@@ -29,12 +31,14 @@ def make_reservation(
     guests: int,
 ):
     print(
-        f"""Making reservation for:
+        f"""{Fore.RED}
+        Making reservation for:
                 guest_name: {guest_name}
                 hotel_name: {hotel_name}
                 checkin_date: {checkin_date}
                 checkout_date: {checkout_date}
                 guests: {guests}
+        {Fore.RESET}
         """
     )
     # Make the reservation
@@ -98,7 +102,7 @@ class HotelReservationsAssistant:
     def __call__(self, query: str) -> str:
         return self.chat(query)
 
-    def chat(self, query: str) -> str:
+    def chat(self, user_message: str) -> str:
         prompt = SYSTEM_PROMPT
         tools_prompt = (
             ""
@@ -112,10 +116,15 @@ class HotelReservationsAssistant:
             [
                 SystemMessage(prompt),
                 *self.chat_history.messages,
-                UserMessage(query),
+                UserMessage(user_message),
             ]
         )
-        tools = [make_reservation_tool]
+        tools = (
+            [make_reservation_tool]
+            if self.llm.supports_function_calling()
+            else NOT_GIVEN
+        )
+
         message = self.llm.chat_completions(messages=messages, tools=tools)  # type: ignore
         if message.tool_calls:
             tool_call = message.tool_calls[0]
@@ -140,6 +149,7 @@ class HotelReservationsAssistant:
                 self.chat_history.add_message(response_message)
         else:
             response_message = AssistantMessage(content=message.content)
+        self.chat_history.add_message(UserMessage(user_message))
         self.chat_history.add_message(response_message)
 
         return response_message.content or ""
@@ -148,7 +158,8 @@ class HotelReservationsAssistant:
 SYSTEM_PROMPT = """
 You are a helpful hotel reservations assistant.
 You should not come up with any information, if you don't know something, just ask the user for more information or use a tool.
-The name of the guest is mandatory to make the reservation.
+Ask the user for confirmation before making the reservation.
+You should say goodbye when you are done.
 
 {tools_prompt}
 """  # noqa E501

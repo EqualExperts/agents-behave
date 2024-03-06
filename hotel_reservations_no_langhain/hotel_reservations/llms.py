@@ -7,7 +7,11 @@ from dataclasses import asdict, dataclass
 from typing import Literal
 
 from hotel_reservations.callbacks import LLMCallbacks, NoOpLLMCallbacks
-from hotel_reservations.messages import ChatResponseMessage, LLMMessages
+from hotel_reservations.messages import (
+    ChatResponseMessage,
+    LLMMessages,
+    to_openai_messages,
+)
 from litellm import Choices, ModelResponse, completion
 from openai import OpenAI
 from openai._types import NOT_GIVEN, NotGiven
@@ -24,6 +28,8 @@ class Unionable:
 
 @dataclass
 class LLMConfig(Unionable):
+    llm_name: str | None = None
+    name: str | None = None
     model: str | None = None
     temperature: float | None = None
     base_url: str | None = None
@@ -40,6 +46,11 @@ class LLMConfig(Unionable):
             callbacks=NoOpLLMCallbacks(),
         )
 
+    def with_llm_name(self, llm_name: str) -> "LLMConfig":
+        no_name = asdict(self)
+        no_name.pop("llm_name")
+        return LLMConfig(**no_name, llm_name=llm_name)
+
     def with_model(
         self,
         model: str,
@@ -55,10 +66,7 @@ class LLMConfig(Unionable):
 
 
 class BaseLLM:
-    def __init__(
-        self,
-        llm_config: LLMConfig,
-    ):
+    def __init__(self, llm_config: LLMConfig):
         self.llm_config = llm_config
         self.llm_config.callbacks.on_create(self)
 
@@ -92,7 +100,7 @@ class OpenAILLM(BaseLLM):
     ) -> ChatResponseMessage:
         response = self.client.chat.completions.create(
             model=self.llm_config.model or "",
-            messages=messages.to_openai_messages(),
+            messages=to_openai_messages(messages),
             tools=tools,
             temperature=self.llm_config.temperature,
         )
@@ -101,7 +109,7 @@ class OpenAILLM(BaseLLM):
             content=response_message.content, tool_calls=response_message.tool_calls
         )
         self.llm_config.callbacks.on_chat_completions(
-            messages, tools, response.__dict__, message
+            self, messages, tools, response.__dict__, message
         )
         return message
 
@@ -130,18 +138,19 @@ class OpenRouterLLM(OpenAILLM):
     ) -> ChatResponseMessage:
         response = self.client.chat.completions.create(
             model=self.llm_config.model or "",
-            messages=messages.to_openai_messages(),
+            messages=to_openai_messages(messages),
             tools=tools,
             temperature=self.llm_config.temperature,
         )
         response_message = response.choices[0].message
         content = response_message.content or ""
         tool_calls = extract_tool_calls(content)
-        message = ChatResponseMessage(
-            content=response_message.content, tool_calls=tool_calls
-        )
+        striped_content = re.sub(r"\{.*\}", "", content)
+        print(f"content: {content}")
+        print(f"striped_content: {striped_content}")
+        message = ChatResponseMessage(content=striped_content, tool_calls=tool_calls)
         self.llm_config.callbacks.on_chat_completions(
-            messages, tools, response.__dict__, message
+            self, messages, tools, response.__dict__, message
         )
         return message
 
@@ -164,11 +173,9 @@ class LiteLLM(BaseLLM):
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven = NOT_GIVEN,
     ) -> ChatResponseMessage:
-        converted_messages = messages.to_openai_messages()
-
         response = completion(
             model=self.llm_config.model or "",
-            messages=converted_messages,
+            messages=to_openai_messages(messages),
             temperature=self.llm_config.temperature,
         )
         message: ChatResponseMessage | None = None
@@ -186,7 +193,7 @@ class LiteLLM(BaseLLM):
             raise ValueError(f"Unexpected response: {response}")
 
         self.llm_config.callbacks.on_chat_completions(
-            messages, tools, response.__dict__, message
+            self, messages, tools, response.__dict__, message
         )
         return message
 
@@ -222,22 +229,25 @@ LLMS = Literal[
 class LLMManager:
 
     @staticmethod
-    def create_llm(llm: LLMS, llm_config: LLMConfig = LLMConfig.default()) -> BaseLLM:
-        if llm == "openai-gpt-4":
+    def create_llm(
+        llm_name: LLMS, llm_config: LLMConfig = LLMConfig.default()
+    ) -> BaseLLM:
+        llm_config = llm_config.with_llm_name(llm_name)
+        if llm_name == "openai-gpt-4":
             return OpenAILLM(
                 llm_config.with_model("gpt-4-turbo-preview").with_function_calling()
             )
-        elif llm == "openrouter-mixtral":
+        elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(
-                llm_config.with_model("mistralai/mixtral-8x7b-instruct")
+                llm_config.with_model(
+                    "mistralai/mixtral-8x7b-instruct"
+                ).with_function_calling()
             )
-        elif llm == "litellm-gpt-4":
-            return LiteLLM(
-                llm_config.with_model("openai/gpt-4").with_function_calling()
-            )
-        elif llm == "litellm-mixtral":
+        elif llm_name == "litellm-gpt-4":
+            return LiteLLM(llm_config.with_model("openai/gpt-4"))
+        elif llm_name == "litellm-mixtral":
             return LiteLLM(
                 llm_config.with_model("openrouter/mistralai/mixtral-8x7b-instruct")
             )
         else:
-            raise ValueError(f"Unknown LLM type: {llm}")
+            raise ValueError(f"Unknown LLM type: {llm_name}")

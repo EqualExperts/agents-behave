@@ -47,10 +47,10 @@ class UserAgentConversation:
 
         self.state = UserAgentConversationState()
 
-    def start(self, query: str) -> UserAgentConversationState:
+    def start(self, user_message: str) -> UserAgentConversationState:
         self.state = UserAgentConversationState()
-        self.state.add_message(HumanMessage(content=query))
-        user_response = query
+        self.state.add_message(HumanMessage(content=user_message))
+        user_response = user_message
         done = False
         while not done:
             llm_response = self.assistant(user_response)

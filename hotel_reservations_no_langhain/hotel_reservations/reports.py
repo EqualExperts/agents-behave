@@ -21,7 +21,9 @@ class MessageReport(Report):
 
 class MessagesReport(Report):
     def __init__(self, messages: LLMMessages):
-        super().__init__("messages", {m.role: m.content for m in messages})
+        super().__init__(
+            "messages", {f"{m.role} - {i+1}": m.content for i, m in enumerate(messages)}
+        )
 
 
 class ToolParamReport(Report):
