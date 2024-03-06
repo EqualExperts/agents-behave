@@ -4,6 +4,7 @@ from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageToolCall,
     ChatCompletionSystemMessageParam,
+    ChatCompletionToolMessageParam,
     ChatCompletionUserMessageParam,
 )
 
@@ -43,13 +44,20 @@ class AssistantMessage(LLMMessage):
         super().__init__("assistant", content)
 
 
+class ToolMessage(LLMMessage):
+    def __init__(self, content: str | None, tool_call_id: str):
+        super().__init__("tool", content)
+        self.tool_call_id = tool_call_id
+
+
 class ChatResponseMessage(LLMMessage):
     def __init__(
         self,
         content: str | None,
         tool_calls: list[ChatCompletionMessageToolCall] | None = None,
     ):
-        super().__init__("assistant", content)
+        role = "assistant" if not tool_calls else "tool"
+        super().__init__(role, content)
         self.tool_calls = tool_calls or []
 
 
@@ -76,5 +84,9 @@ def to_openai_message(message: LLMMessage):
         return ChatCompletionUserMessageParam(role="user", content=content)
     elif isinstance(message, AssistantMessage):
         return ChatCompletionAssistantMessageParam(role="assistant", content=content)
+    elif isinstance(message, ToolMessage):
+        return ChatCompletionToolMessageParam(
+            role="tool", content=content, tool_call_id="some-id"
+        )
     else:
         raise ValueError(f"Unexpected message type: {message}")

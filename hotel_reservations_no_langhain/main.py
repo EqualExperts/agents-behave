@@ -4,7 +4,7 @@ from dataclasses import asdict
 from typing import cast
 
 import litellm
-from colorama import Fore
+from colorama import Fore, Style
 from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
 from hotel_reservations.callbacks import ConsoleLLMCallbacks
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
@@ -110,13 +110,15 @@ Once I have this information, I can make the reservation for you.
 
 
 if __name__ == "__main__":
-    print(f"{Fore.GREEN} ###  #####   #   ####  #####{Fore.RESET}")
-    print(f"{Fore.GREEN}#   #   #    # #  #   #   #  {Fore.RESET}")
-    print(f"{Fore.GREEN}#       #   #   # #   #   #  {Fore.RESET}")
-    print(f"{Fore.GREEN} ###    #   #   # ####    #  {Fore.RESET}")
-    print(f"{Fore.GREEN}    #   #   ##### # #     #  {Fore.RESET}")
-    print(f"{Fore.GREEN}#   #   #   #   # #  #    #  {Fore.RESET}")
-    print(f"{Fore.GREEN} ###    #   #   # #   #   #  {Fore.RESET}")
+    print(Fore.YELLOW + Style.BRIGHT)
+    print(" ###  #####   #   ####  #####")
+    print("#   #   #    # #  #   #   #  ")
+    print("#       #   #   # #   #   #  ")
+    print(" ###    #   #   # ####    #  ")
+    print("    #   #   ##### # #     #  ")
+    print("#   #   #   #   # #  #    #  ")
+    print(" ###    #   #   # #   #   #  ")
+    print(Style.RESET_ALL)
 
     llm_name = sys.argv[1] if len(sys.argv) > 1 else "openrouter-mixtral"
     conversation(cast(LLMS, llm_name))

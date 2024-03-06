@@ -65,7 +65,7 @@ class ConsoleLLMCallbacks(LLMCallbacks):
         message: ChatResponseMessage,
     ):
         self.output(
-            f"---- {llm.llm_config.name}{'-' * 80}", color=Fore.YELLOW + Style.BRIGHT
+            f"---- {llm.llm_config.name} {'-' * 150}", color=Fore.YELLOW + Style.BRIGHT
         )
         self.report(MessagesReport(messages))
         if tools:
@@ -75,16 +75,17 @@ class ConsoleLLMCallbacks(LLMCallbacks):
         self.report(MessageReport(message))
 
     def report(self, report: Report, ident=0):
-        self.output("-" * 80)
+        self.output("-" * 150)
         self.title(report.name, ident=ident)
         for k, v in report.values.items():
             if isinstance(v, Report):
                 self.report(v, ident=ident + 4)
             else:
+                key = f"{k}:".ljust(30)
                 self.details(
-                    f"{Style.BRIGHT}{Fore.MAGENTA}{k}: {Fore.LIGHTBLUE_EX}{v}{Style.RESET_ALL}",
+                    f"{Style.BRIGHT}{Fore.MAGENTA}{key}{Fore.LIGHTBLUE_EX}{v}{Style.RESET_ALL}",
                     ident=ident + 4,
-                    line_ident=ident + 4 + len(k) + 2,
+                    line_ident=ident + 4 + 30,
                 )
 
     def title(self, message: str, ident=0):
@@ -100,7 +101,7 @@ class ConsoleLLMCallbacks(LLMCallbacks):
     def justify(self, message: str, width=150):
         lines = message.split("\n")
         splitted_lines = [self.chunk(line, width) for line in lines]
-        flatted_lines = [line for lines in splitted_lines for line in lines]
+        flatted_lines = [line.strip() for lines in splitted_lines for line in lines]
         return "\n".join(flatted_lines)
 
     def chunk(self, line: str, width):

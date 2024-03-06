@@ -4,14 +4,17 @@ from datetime import date
 from typing import Callable
 
 from colorama import Fore
-from hotel_reservations.llms import BaseLLM
 from hotel_reservations.messages import (
     AssistantMessage,
+    LLMMessage,
     LLMMessages,
     SystemMessage,
     UserMessage,
 )
 from openai._types import NOT_GIVEN
+from openai.types.chat import ChatCompletionMessageToolCall
+
+from hotel_reservations_no_langhain.hotel_reservations.llms import BaseLLM
 
 MakeReservation = Callable[[str, str, date, date, int], bool]
 
@@ -65,12 +68,12 @@ make_reservation_tool = {
                 "checkin_date": {
                     "type": "string",
                     "format": "date",
-                    "description": "The checkin date",
+                    "description": "The checkin date (YYYY-MM-DD)",
                 },
                 "checkout_date": {
                     "type": "string",
                     "format": "date",
-                    "description": "The checkout date",
+                    "description": "The checkout date (YYYY-MM-DD)",
                 },
                 "guests": {
                     "type": "integer",
@@ -98,6 +101,10 @@ class HotelReservationsAssistant:
         self.make_reservation = make_reservation
         self.chat_history = LLMMessages()
         self.llm = llm
+
+        self.tools = {
+            "make_reservation": self.make_reservation,
+        }
 
     def __call__(self, query: str) -> str:
         return self.chat(query)
@@ -127,32 +134,37 @@ class HotelReservationsAssistant:
 
         message = self.llm.chat_completions(messages=messages, tools=tools)  # type: ignore
         if message.tool_calls:
-            tool_call = message.tool_calls[0]
-            if tool_call.function.name == "make_reservation":
-                arguments = tool_call.function.arguments
-                json_arguments = json.loads(arguments)
-                json_arguments["checkin_date"] = date.fromisoformat(
-                    json_arguments["checkin_date"]
-                )
-                json_arguments["checkout_date"] = date.fromisoformat(
-                    json_arguments["checkout_date"]
-                )
-                tool_result = self.make_reservation(**json_arguments)  # type: ignore
-                if tool_result:
-                    response_message = AssistantMessage(
-                        content="Reservation made successfully",
-                    )
-                else:
-                    response_message = AssistantMessage(
-                        content="Failed to make reservation",
-                    )
-                self.chat_history.add_message(response_message)
+            response_message = self.call_tool(message.tool_calls[0])
         else:
             response_message = AssistantMessage(content=message.content)
         self.chat_history.add_message(UserMessage(user_message))
         self.chat_history.add_message(response_message)
 
         return response_message.content or ""
+
+    def call_tool(self, tool_call: ChatCompletionMessageToolCall) -> LLMMessage:
+        function_name = tool_call.function.name
+        tool = self.tools[function_name]
+        # tool_call_id = tool_call.id
+        arguments = tool_call.function.arguments
+        json_arguments = json.loads(arguments)
+        json_arguments["checkin_date"] = date.fromisoformat(
+            json_arguments["checkin_date"]
+        )
+        json_arguments["checkout_date"] = date.fromisoformat(
+            json_arguments["checkout_date"]
+        )
+        tool_result = tool(**json_arguments)  # type: ignore
+        # content = f"Called Function {function_name} with arguments {arguments}. Result: {tool_result}"
+        # tool_message = ToolMessage(content=content, tool_call_id=tool_call_id)
+        # self.chat_history.add_message(tool_message)
+        if tool_result:
+            content = "Reservation made successfully"
+        else:
+            content = "Reservation failed"
+        response_message = AssistantMessage(content=content)
+        self.chat_history.add_message(response_message)
+        return response_message
 
 
 SYSTEM_PROMPT = """
@@ -176,14 +188,20 @@ Here are the tools available to you:
 Think about the user query step by step and decide if you need to use a tool for the next step.
 Ask the user for more information if you need it.
 
-if you do need to use a tool, you MUST return a response in the following JSON format:
+Your response should always be in JSON format, using the following structure:
 {{
-    "function_call": {{
-        "name": "<function_name>",
-        "arguments": {{
-            "<arg_1>": <arg_1_value>,
-            "<arg_2>": <arg_2_value>
-        }}
+    "content": "<your_response>"
+    "function_call": <if you need to use a tool>
+}}
+---------------------
+
+if you need to use a tool, the schema of the function call is:
+{{
+    "name": "<function_name>",
+    "arguments": {{
+        "<arg_1>": <arg_1_value>,
+        "<arg_2>": <arg_2_value>
     }}
 }}
+---------------------
 """

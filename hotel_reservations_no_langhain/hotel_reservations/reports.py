@@ -31,7 +31,8 @@ class ToolParamReport(Report):
         super().__init__(
             "tool_param",
             {
-                "tool_param": tool_param,
+                "type": tool_param["type"],
+                "function": tool_param["function"],
             },
         )
 

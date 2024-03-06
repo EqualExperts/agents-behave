@@ -144,15 +144,28 @@ class OpenRouterLLM(OpenAILLM):
         )
         response_message = response.choices[0].message
         content = response_message.content or ""
-        tool_calls = extract_tool_calls(content)
-        striped_content = re.sub(r"\{.*\}", "", content)
-        print(f"content: {content}")
-        print(f"striped_content: {striped_content}")
-        message = ChatResponseMessage(content=striped_content, tool_calls=tool_calls)
+        tool_calls = self.extract_tool_calls(content)
+        message = ChatResponseMessage(content=content, tool_calls=tool_calls)
         self.llm_config.callbacks.on_chat_completions(
             self, messages, tools, response.__dict__, message
         )
         return message
+
+    def extract_tool_calls(
+        self, content: str
+    ) -> list[ChatCompletionMessageToolCall] | None:
+        if """function""" in content:
+            function_call = json.loads(content)
+            function_name = function_call["function"]
+            tool_input = json.dumps(function_call["parameters"])
+            tool_call = ChatCompletionMessageToolCall(
+                id="",
+                type="function",
+                function=Function(name=function_name, arguments=tool_input),
+            )
+            return [tool_call]
+        else:
+            return None
 
 
 class LiteLLM(BaseLLM):
@@ -183,7 +196,7 @@ class LiteLLM(BaseLLM):
             choice = response.choices[0]
             if isinstance(choice, Choices):
                 content = choice.message.content
-                tool_calls = extract_tool_calls(content)
+                tool_calls = self.extract_tool_calls(content)
                 striped_content = re.sub(r"\{.*\}", "", content)
                 message = ChatResponseMessage(
                     content=striped_content, tool_calls=tool_calls
@@ -197,14 +210,13 @@ class LiteLLM(BaseLLM):
         )
         return message
 
-
-def extract_tool_calls(content: str) -> list[ChatCompletionMessageToolCall] | None:
-    if "null" in content:
-        return None
-    pattern = r'\{\s*"function_call":\s*\{.*?\}\s*\}\s*\}'
-    matches = re.findall(pattern, content, re.DOTALL)
-    if matches:
-        function_call = json.loads(matches[0])["function_call"]
+    def extract_tool_calls(
+        self, content: str
+    ) -> list[ChatCompletionMessageToolCall] | None:
+        if "content" not in content or "function_call" not in content:
+            return None
+        response = json.loads(content)
+        function_call = response["function_call"]
         function_name = function_call["name"]
         tool_input = json.dumps(function_call["arguments"])
         tool_call = ChatCompletionMessageToolCall(
@@ -213,8 +225,6 @@ def extract_tool_calls(content: str) -> list[ChatCompletionMessageToolCall] | No
             function=Function(name=function_name, arguments=tool_input),
         )
         return [tool_call]
-    else:
-        return None
 
 
 LLMS = Literal[
