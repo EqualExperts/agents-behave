@@ -3,7 +3,11 @@ from unittest.mock import Mock
 
 from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
-from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
+from hotel_reservations.assistant import (
+    HotelReservationsAssistant,
+    get_hotel_price_per_night,
+    make_reservation,
+)
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
 from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
@@ -39,8 +43,10 @@ def test_i_want_to_book_a_room():
     user = LLMUser(persona=persona, llm=create_llm("LLMUser"))
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
+    get_hotel_price_per_night_mock = Mock(get_hotel_price_per_night, return_value=True)
     assistant = HotelReservationsAssistant(
         make_reservation=make_reservation_mock,
+        get_hotel_price_per_night=get_hotel_price_per_night_mock,
         llm=create_llm("Assistant"),
     )
 
@@ -70,6 +76,12 @@ def test_i_want_to_book_a_room():
     )
 
     assert_that(report.score, greater_than(0))
+
+    get_hotel_price_per_night.assert_called_once_with(
+        hotel_name="Hilton Hotel",
+        checkin_date=date(2024, 2, 9),
+        checkout_date=date(2024, 2, 11),
+    )
 
     make_reservation_mock.assert_called_once_with(
         hotel_name="Hilton Hotel",

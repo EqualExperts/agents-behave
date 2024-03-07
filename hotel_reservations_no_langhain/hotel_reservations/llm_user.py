@@ -59,7 +59,9 @@ class LLMUser(User):
 
 
 SYSTEM_PROMPT = """
-    Your job is to manage a conversation with an assistant.
+    Your role is to simulate a User that asked an Assistant to do a task. Remember, you are the User, not the Assistant.
+    If you don't know the answer, just pick a random one.
+
     Here is some information about you:
     {persona}
     -------------

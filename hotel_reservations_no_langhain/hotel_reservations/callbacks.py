@@ -101,7 +101,7 @@ class ConsoleLLMCallbacks(LLMCallbacks):
     def justify(self, message: str, width=150):
         lines = message.split("\n")
         splitted_lines = [self.chunk(line, width) for line in lines]
-        flatted_lines = [line.strip() for lines in splitted_lines for line in lines]
+        flatted_lines = [line for lines in splitted_lines for line in lines]
         return "\n".join(flatted_lines)
 
     def chunk(self, line: str, width):

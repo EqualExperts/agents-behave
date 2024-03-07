@@ -1,5 +1,6 @@
 from typing import Callable
 
+from colorama import Fore
 from hotel_reservations.llm_user import User
 from hotel_reservations.llms import BaseLLM, LLMMessages
 from hotel_reservations.messages import AssistantMessage, LLMMessage, UserMessage
@@ -66,6 +67,7 @@ class UserAgentConversation:
         self.state.add_message(UserMessage(content=user_message))
         user_response = user_message
         while not self.stop_condition(self.state):
+            print(f"{Fore.YELLOW}Iteration {self.state.iterations_count}{Fore.RESET}")
             llm_response = self.assistant(user_response)
             user_response = self.user.chat(llm_response)
 

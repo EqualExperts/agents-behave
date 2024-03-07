@@ -3,10 +3,12 @@ from abc import ABC
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageToolCall,
+    ChatCompletionMessageToolCallParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionToolMessageParam,
     ChatCompletionUserMessageParam,
 )
+from openai.types.chat.chat_completion_message_tool_call_param import Function
 
 
 class LLMMessage(ABC):
@@ -45,9 +47,18 @@ class AssistantMessage(LLMMessage):
 
 
 class ToolMessage(LLMMessage):
-    def __init__(self, content: str | None, tool_call_id: str):
+    def __init__(
+        self,
+        content: str | None,
+        tool_call_id: str,
+    ):
         super().__init__("tool", content)
         self.tool_call_id = tool_call_id
+
+    def __str__(self):
+        return (
+            f"{self.role.upper()}: {self.content} - tool_call_id: '{self.tool_call_id}'"
+        )
 
 
 class ChatResponseMessage(LLMMessage):
@@ -56,9 +67,12 @@ class ChatResponseMessage(LLMMessage):
         content: str | None,
         tool_calls: list[ChatCompletionMessageToolCall] | None = None,
     ):
-        role = "assistant" if not tool_calls else "tool"
+        role = "tool_calls" if tool_calls else "assistant"
         super().__init__(role, content)
         self.tool_calls = tool_calls or []
+
+    def __str__(self):
+        return f"{self.role.upper()}: {self.content} tool_calls: {self.tool_calls}"
 
 
 class LLMMessages:
@@ -70,6 +84,9 @@ class LLMMessages:
 
     def add_message(self, message: LLMMessage):
         self.messages.append(message)
+
+    def __str__(self):
+        return "\n".join(str(message) for message in self.messages)
 
 
 def to_openai_messages(messages: LLMMessages):
@@ -86,7 +103,22 @@ def to_openai_message(message: LLMMessage):
         return ChatCompletionAssistantMessageParam(role="assistant", content=content)
     elif isinstance(message, ToolMessage):
         return ChatCompletionToolMessageParam(
-            role="tool", content=content, tool_call_id="some-id"
+            role="tool", content=content, tool_call_id=message.tool_call_id
+        )
+    elif isinstance(message, ChatResponseMessage):
+        tool_calls_param = [
+            ChatCompletionMessageToolCallParam(
+                id=tool_call.id,
+                type=tool_call.type,
+                function=Function(
+                    arguments=tool_call.function.arguments,
+                    name=tool_call.function.name,
+                ),
+            )
+            for tool_call in message.tool_calls
+        ]
+        return ChatCompletionAssistantMessageParam(
+            role="assistant", content=content, tool_calls=tool_calls_param
         )
     else:
         raise ValueError(f"Unexpected message type: {message}")

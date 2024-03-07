@@ -5,7 +5,11 @@ from typing import cast
 
 import litellm
 from colorama import Fore, Style
-from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
+from hotel_reservations.assistant import (
+    HotelReservationsAssistant,
+    get_hotel_price_per_night,
+    make_reservation,
+)
 from hotel_reservations.callbacks import ConsoleLLMCallbacks
 from hotel_reservations.conversation_analyzer import ConversationAnalyzer
 from hotel_reservations.llm_user import LLMUser
@@ -30,6 +34,7 @@ def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
 def assistant(llm_name: LLMS):
     assistant = HotelReservationsAssistant(
         make_reservation=make_reservation,
+        get_hotel_price_per_night=get_hotel_price_per_night,
         llm=create_llm(llm_name, "assistant"),
     )
     assistant.chat("I want to book a room")
@@ -51,6 +56,7 @@ def conversation(llm_name: LLMS):
 
     assistant = HotelReservationsAssistant(
         make_reservation=make_reservation,
+        get_hotel_price_per_night=get_hotel_price_per_night,
         llm=create_llm(llm_name, "Assistant"),
     )
 
@@ -58,13 +64,14 @@ def conversation(llm_name: LLMS):
         user,
         assistant,
         llm=create_llm(llm_name, "UserAgentConversation"),
-        stop_condition=lambda state: state.iterations_count >= 10
+        stop_condition=lambda state: state.iterations_count >= 6
         or state.last_assistant_message_contains("bye"),
     )
     conversation_state = conversation.start()
 
     criteria = [
-        "Ask for the information needed to make a reservation. No need to ask for anything else.",
+        "Ask for the information needed to make a reservation.",
+        "There is no need to ask for anything else besides the information needed to call the make_reservation tool.",
         "Ask for confirmation before making the reservation.",
         "Be polite and helpful.",
     ]

@@ -1,6 +1,5 @@
 import json
 import os
-import re
 from abc import abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
@@ -106,7 +105,8 @@ class OpenAILLM(BaseLLM):
         )
         response_message = response.choices[0].message
         message = ChatResponseMessage(
-            content=response_message.content, tool_calls=response_message.tool_calls
+            content=response_message.content,
+            tool_calls=response_message.tool_calls,
         )
         self.llm_config.callbacks.on_chat_completions(
             self, messages, tools, response.__dict__, message
@@ -186,6 +186,7 @@ class LiteLLM(BaseLLM):
         messages: LLMMessages,
         tools: Iterable[ChatCompletionToolParam] | NotGiven = NOT_GIVEN,
     ) -> ChatResponseMessage:
+
         response = completion(
             model=self.llm_config.model or "",
             messages=to_openai_messages(messages),
@@ -196,10 +197,20 @@ class LiteLLM(BaseLLM):
             choice = response.choices[0]
             if isinstance(choice, Choices):
                 content = choice.message.content
-                tool_calls = self.extract_tool_calls(content)
-                striped_content = re.sub(r"\{.*\}", "", content)
+                print(f"Content: {content}")
+                decoded_content = self.decode_content(content)
+                response_content = (
+                    decoded_content["content"]
+                    if decoded_content and "content" in decoded_content
+                    else content
+                )
+                tool_calls = (
+                    self.extract_tool_calls(decoded_content)
+                    if decoded_content
+                    else None
+                )
                 message = ChatResponseMessage(
-                    content=striped_content, tool_calls=tool_calls
+                    content=response_content, tool_calls=tool_calls
                 )
 
         if not message:
@@ -211,12 +222,13 @@ class LiteLLM(BaseLLM):
         return message
 
     def extract_tool_calls(
-        self, content: str
+        self, decoded_content: dict
     ) -> list[ChatCompletionMessageToolCall] | None:
-        if "content" not in content or "function_call" not in content:
+        if "function_call" not in decoded_content:
             return None
-        response = json.loads(content)
-        function_call = response["function_call"]
+        function_call = decoded_content["function_call"]
+        if function_call is None:
+            return None
         function_name = function_call["name"]
         tool_input = json.dumps(function_call["arguments"])
         tool_call = ChatCompletionMessageToolCall(
@@ -225,6 +237,15 @@ class LiteLLM(BaseLLM):
             function=Function(name=function_name, arguments=tool_input),
         )
         return [tool_call]
+
+    def decode_content(self, content: str) -> dict | None:
+        json_content = content.replace("```json", "").replace("```", "")
+        try:
+            response = json.loads(json_content)
+        except json.JSONDecodeError:
+            return None
+
+        return response
 
 
 LLMS = Literal[

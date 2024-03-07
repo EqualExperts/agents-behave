@@ -1,14 +1,17 @@
 import json
 from dataclasses import dataclass
 from datetime import date
+from random import randint
 from typing import Callable
 
 from colorama import Fore
 from hotel_reservations.messages import (
     AssistantMessage,
+    ChatResponseMessage,
     LLMMessage,
     LLMMessages,
     SystemMessage,
+    ToolMessage,
     UserMessage,
 )
 from openai._types import NOT_GIVEN
@@ -17,6 +20,7 @@ from openai.types.chat import ChatCompletionMessageToolCall
 from hotel_reservations_no_langhain.hotel_reservations.llms import BaseLLM
 
 MakeReservation = Callable[[str, str, date, date, int], bool]
+GetHotelPricePerNight = Callable[[str, date, date], float]
 
 
 @dataclass
@@ -92,78 +96,164 @@ make_reservation_tool = {
 }
 
 
+def get_hotel_price_per_night(
+    hotel_name: str, checkin_date: date, checkout_date: date
+) -> float:
+    price = randint(100, 500)
+    print(
+        f"""{Fore.RED}
+        Getting price per night for:
+                hotel_name: {hotel_name}
+                checkin_date: {checkin_date}
+                checkout_date: {checkout_date}
+
+        Price per night: {price}
+        {Fore.RESET}
+        """
+    )
+    return price
+
+
+get_hotel_price_per_night_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_hotel_price_per_night",
+        "description": "Useful to get the price per night of an hotel",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "hotel_name": {
+                    "type": "string",
+                    "description": "The name of the hotel",
+                },
+                "checkin_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "The checkin date (YYYY-MM-DD)",
+                },
+                "checkout_date": {
+                    "type": "string",
+                    "format": "date",
+                    "description": "The checkout date (YYYY-MM-DD)",
+                },
+            },
+            "required": ["hotel_name", "checkin_date", "checkout_date"],
+        },
+    },
+}
+
+
 class HotelReservationsAssistant:
     def __init__(
         self,
         make_reservation: MakeReservation,
+        get_hotel_price_per_night: GetHotelPricePerNight,
         llm: BaseLLM,
     ):
         self.make_reservation = make_reservation
+        self.get_hotel_price_per_night = get_hotel_price_per_night
         self.chat_history = LLMMessages()
         self.llm = llm
 
-        self.tools = {
-            "make_reservation": self.make_reservation,
+        self.tool_handlers = {
+            "make_reservation": self.make_reservation_handler,
+            "get_hotel_price_per_night": self.get_hotel_price_per_night_handler,
         }
+
+    def make_reservation_handler(self, arguments: dict):
+        hotel_name = arguments["hotel_name"]
+        guest_name = arguments["guest_name"]
+        checkin_date = date.fromisoformat(arguments["checkin_date"])
+        checkout_date = date.fromisoformat(arguments["checkout_date"])
+        guests = arguments["guests"]
+        result = self.make_reservation(
+            hotel_name, guest_name, checkin_date, checkout_date, guests
+        )
+        return (
+            f"The reservation for {guest_name} at {hotel_name} was successful: {result}"
+        )
+
+    def get_hotel_price_per_night_handler(self, arguments: dict):
+        hotel_name = arguments["hotel_name"]
+        checkin_date = date.fromisoformat(arguments["checkin_date"])
+        checkout_date = date.fromisoformat(arguments["checkout_date"])
+        result = self.get_hotel_price_per_night(hotel_name, checkin_date, checkout_date)
+        return f"The price per night at {hotel_name} is {result}"
 
     def __call__(self, query: str) -> str:
         return self.chat(query)
 
     def chat(self, user_message: str) -> str:
-        prompt = SYSTEM_PROMPT
-        tools_prompt = (
-            ""
-            if self.llm.supports_function_calling()
-            else TOOLS_PROMPT.format(
-                tools=json.dumps([make_reservation_tool], indent=4)
-            )
-        )
-        prompt = prompt.format(tools_prompt=tools_prompt)
-        messages = LLMMessages(
-            [
-                SystemMessage(prompt),
-                *self.chat_history.messages,
-                UserMessage(user_message),
-            ]
-        )
-        tools = (
-            [make_reservation_tool]
-            if self.llm.supports_function_calling()
-            else NOT_GIVEN
-        )
-
-        message = self.llm.chat_completions(messages=messages, tools=tools)  # type: ignore
-        if message.tool_calls:
-            response_message = self.call_tool(message.tool_calls[0])
-        else:
-            response_message = AssistantMessage(content=message.content)
+        self.c = 0
+        response_message = self.get_response(user_message)
         self.chat_history.add_message(UserMessage(user_message))
         self.chat_history.add_message(response_message)
 
         return response_message.content or ""
 
-    def call_tool(self, tool_call: ChatCompletionMessageToolCall) -> LLMMessage:
+    def get_response(
+        self,
+        user_message: str,
+        extra_messages: LLMMessages | None = None,
+        recursion_level=0,
+    ) -> LLMMessage:
+        if recursion_level > 2:
+            return AssistantMessage(content="done")
+
+        prompt = SYSTEM_PROMPT
+        tools = [
+            make_reservation_tool,
+            get_hotel_price_per_night_tool,
+        ]
+
+        tools_prompt = (
+            ""
+            if self.llm.supports_function_calling()
+            else TOOLS_PROMPT.format(tools=json.dumps(tools, indent=4))
+        )
+        prompt = prompt.format(tools_prompt=tools_prompt)
+        extra_messages = extra_messages or LLMMessages()
+        messages = LLMMessages(
+            [
+                SystemMessage(prompt),
+                *self.chat_history,
+                *extra_messages,
+            ]
+        )
+        if user_message:
+            messages.add_message(UserMessage(user_message))
+
+        completion_message = self.llm.chat_completions(
+            messages=messages,
+            tools=tools if self.llm.supports_function_calling() else NOT_GIVEN,  # type: ignore
+        )
+        if completion_message.tool_calls:
+            response_message = self.call_tool(
+                completion_message.tool_calls[0], recursion_level
+            )
+        else:
+            response_message = AssistantMessage(content=completion_message.content)
+        return response_message
+
+    def call_tool(
+        self, tool_call: ChatCompletionMessageToolCall, recursion_level: int
+    ) -> LLMMessage:
         function_name = tool_call.function.name
-        tool = self.tools[function_name]
-        # tool_call_id = tool_call.id
+        tool_handler = self.tool_handlers[function_name]
+        tool_call_id = tool_call.id
         arguments = tool_call.function.arguments
         json_arguments = json.loads(arguments)
-        json_arguments["checkin_date"] = date.fromisoformat(
-            json_arguments["checkin_date"]
+        tool_result = tool_handler(json_arguments)
+        tool_calls_message = ChatResponseMessage(
+            content=tool_call.function.name, tool_calls=[tool_call]
         )
-        json_arguments["checkout_date"] = date.fromisoformat(
-            json_arguments["checkout_date"]
+        tool__message = ToolMessage(content=tool_result, tool_call_id=tool_call_id)
+        extra_messages = LLMMessages([tool_calls_message, tool__message])
+        response_message = self.get_response(
+            "",
+            extra_messages=extra_messages,
+            recursion_level=recursion_level + 1,
         )
-        tool_result = tool(**json_arguments)  # type: ignore
-        # content = f"Called Function {function_name} with arguments {arguments}. Result: {tool_result}"
-        # tool_message = ToolMessage(content=content, tool_call_id=tool_call_id)
-        # self.chat_history.add_message(tool_message)
-        if tool_result:
-            content = "Reservation made successfully"
-        else:
-            content = "Reservation failed"
-        response_message = AssistantMessage(content=content)
-        self.chat_history.add_message(response_message)
         return response_message
 
 
@@ -176,32 +266,33 @@ You should say goodbye when you are done.
 {tools_prompt}
 """  # noqa E501
 
-
 TOOLS_PROMPT = """
 You have some tools available to help you with the user query.
-Do not mention the tools to the user.
+Here is how you should handle user requests:
 
-Here are the tools available to you:
+- Understand the user requirements.
+- Decide if you need to use a tool to get the information you need.
+- The tools available are: [get_hotel_price_per_night, make_reservation]
+- If you need to use a tool, just return the tool call, the result will appear in the next message.
+
+You must use the tool get_hotel_price_per_night to inform the user of the price per night and ask for confirmation before making the reservation.
+
+Here are the tools available for you to use:
 {tools}
 --------------------
-
-Think about the user query step by step and decide if you need to use a tool for the next step.
-Ask the user for more information if you need it.
 
 Your response should always be in JSON format, using the following structure:
 {{
     "content": "<your_response>"
-    "function_call": <if you need to use a tool>
-}}
----------------------
-
-if you need to use a tool, the schema of the function call is:
-{{
-    "name": "<function_name>",
-    "arguments": {{
-        "<arg_1>": <arg_1_value>,
-        "<arg_2>": <arg_2_value>
+    "function_call": {{
+        "name": "<function_name>",
+        "arguments": {{
+            "<arg_1>": <arg_1_value>,
+            "<arg_2>": <arg_2_value>
+        }}
     }}
 }}
 ---------------------
-"""
+Return only one of fields "content" or "function_call".
+
+"""  # noqa E501
