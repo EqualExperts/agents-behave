@@ -14,13 +14,15 @@ from hotel_reservations.messages import (
     ToolMessage,
     UserMessage,
 )
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.utils.function_calling import convert_to_openai_function
 from openai._types import NOT_GIVEN
 from openai.types.chat import ChatCompletionMessageToolCall
 
 from hotel_reservations_no_langhain.hotel_reservations.llms import BaseLLM
 
-MakeReservation = Callable[[str, str, date, date, int], bool]
-GetHotelPricePerNight = Callable[[str, date, date], float]
+MakeReservationType = Callable[[str, str, date, date, int], bool]
+GetHotelPricePerNightType = Callable[[str, date, date], float]
 
 
 @dataclass
@@ -52,48 +54,20 @@ def make_reservation(
     # ...
     return True
 
+    """Books a room in a hotel for a specified guest and date range."""
 
-make_reservation_tool = {
-    "type": "function",
-    "function": {
-        "name": "make_reservation",
-        "description": "Useful to make an hotel reservation",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "guest_name": {
-                    "type": "string",
-                    "description": "The name of the guest",
-                },
-                "hotel_name": {
-                    "type": "string",
-                    "description": "The name of the hotel",
-                },
-                "checkin_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "The checkin date (YYYY-MM-DD)",
-                },
-                "checkout_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "The checkout date (YYYY-MM-DD)",
-                },
-                "guests": {
-                    "type": "integer",
-                    "description": "The number of guests",
-                },
-            },
-            "required": [
-                "guest_name",
-                "hotel_name",
-                "checkin_date",
-                "checkout_date",
-                "guests",
-            ],
-        },
-    },
-}
+
+class MakeReservation(BaseModel):
+
+    hotel_name: str = Field(description="the name of the hotel")
+    guest_name: str = Field(description="the name of the guest")
+    checkin_date: str = Field(
+        description="the start date of the reservation (YYYY-MM-DD)"
+    )
+    checkout_date: str = Field(
+        description="the end date of the reservation (YYYY-MM-DD)"
+    )
+    guests: int = Field(description="the number of guests")
 
 
 def get_hotel_price_per_night(
@@ -114,40 +88,23 @@ def get_hotel_price_per_night(
     return price
 
 
-get_hotel_price_per_night_tool = {
-    "type": "function",
-    "function": {
-        "name": "get_hotel_price_per_night",
-        "description": "Useful to get the price per night of an hotel",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "hotel_name": {
-                    "type": "string",
-                    "description": "The name of the hotel",
-                },
-                "checkin_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "The checkin date (YYYY-MM-DD)",
-                },
-                "checkout_date": {
-                    "type": "string",
-                    "format": "date",
-                    "description": "The checkout date (YYYY-MM-DD)",
-                },
-            },
-            "required": ["hotel_name", "checkin_date", "checkout_date"],
-        },
-    },
-}
+class GetHotelPricePerNight(BaseModel):
+    """Gets the price per night of a hotel."""
+
+    hotel_name: str = Field(description="the name of the hotel")
+    checkin_date: str = Field(
+        description="the start date of the reservation (YYYY-MM-DD)"
+    )
+    checkout_date: str = Field(
+        description="the end date of the reservation (YYYY-MM-DD)"
+    )
 
 
 class HotelReservationsAssistant:
     def __init__(
         self,
-        make_reservation: MakeReservation,
-        get_hotel_price_per_night: GetHotelPricePerNight,
+        make_reservation: MakeReservationType,
+        get_hotel_price_per_night: GetHotelPricePerNightType,
         llm: BaseLLM,
     ):
         self.make_reservation = make_reservation
@@ -156,8 +113,8 @@ class HotelReservationsAssistant:
         self.llm = llm
 
         self.tool_handlers = {
-            "make_reservation": self.make_reservation_handler,
-            "get_hotel_price_per_night": self.get_hotel_price_per_night_handler,
+            "MakeReservation": self.make_reservation_handler,
+            "GetHotelPricePerNight": self.get_hotel_price_per_night_handler,
         }
 
     def make_reservation_handler(self, arguments: dict):
@@ -178,55 +135,66 @@ class HotelReservationsAssistant:
         checkin_date = date.fromisoformat(arguments["checkin_date"])
         checkout_date = date.fromisoformat(arguments["checkout_date"])
         result = self.get_hotel_price_per_night(hotel_name, checkin_date, checkout_date)
-        return f"The price per night at {hotel_name} is {result}"
+        return f"The price per night at {hotel_name} is ${result}"
 
     def __call__(self, query: str) -> str:
         return self.chat(query)
 
     def chat(self, user_message: str) -> str:
-        self.c = 0
-        response_message = self.get_response(user_message)
         self.chat_history.add_message(UserMessage(user_message))
+        response_message = self.get_response()
         self.chat_history.add_message(response_message)
 
         return response_message.content or ""
 
     def get_response(
         self,
-        user_message: str,
         extra_messages: LLMMessages | None = None,
         recursion_level=0,
     ) -> LLMMessage:
         if recursion_level > 2:
             return AssistantMessage(content="done")
 
-        prompt = SYSTEM_PROMPT
-        tools = [
-            make_reservation_tool,
-            get_hotel_price_per_night_tool,
+        prompt = (
+            SYSTEM_PROMPT
+            if self.llm.supports_function_calling()
+            else SYSTEM_PROMPT_NO_FUNCTIONS
+        )
+
+        available_tools = [
+            MakeReservation,
+            GetHotelPricePerNight,
         ]
 
-        tools_prompt = (
-            ""
-            if self.llm.supports_function_calling()
-            else TOOLS_PROMPT.format(tools=json.dumps(tools, indent=4))
-        )
-        prompt = prompt.format(tools_prompt=tools_prompt)
+        if self.llm.supports_function_calling():
+            prompt = SYSTEM_PROMPT
+            tools = available_tools
+        else:
+            fn = """{"name": "function_name", "arguments": {"arg_1": "value_1", "arg_2": value_2, ...}}"""
+            tools_json = [
+                str(convert_to_openai_function(tool)) for tool in available_tools
+            ]
+            prompt = SYSTEM_PROMPT_NO_FUNCTIONS.format(
+                tools="\n".join(tools_json), fn=fn
+            )
+            tools = NOT_GIVEN
+
         extra_messages = extra_messages or LLMMessages()
         messages = LLMMessages(
             [
                 SystemMessage(prompt),
                 *self.chat_history,
                 *extra_messages,
+                # AssistantMessage(content=""),
             ]
         )
-        if user_message:
-            messages.add_message(UserMessage(user_message))
 
-        completion_message = self.llm.chat_completions(
-            messages=messages,
-            tools=tools if self.llm.supports_function_calling() else NOT_GIVEN,  # type: ignore
-        )
+        # print("-" * 80)
+        # print(messages)
+        # print("-" * 80)
+
+        completion_message = self.llm.chat_completions(messages=messages, tools=tools)
+
         if completion_message.tool_calls:
             response_message = self.call_tool(
                 completion_message.tool_calls[0], recursion_level
@@ -244,13 +212,16 @@ class HotelReservationsAssistant:
         arguments = tool_call.function.arguments
         json_arguments = json.loads(arguments)
         tool_result = tool_handler(json_arguments)
-        tool_calls_message = ChatResponseMessage(
-            content=tool_call.function.name, tool_calls=[tool_call]
-        )
-        tool__message = ToolMessage(content=tool_result, tool_call_id=tool_call_id)
-        extra_messages = LLMMessages([tool_calls_message, tool__message])
+        if self.llm.supports_function_calling():
+            tool_calls_message = ChatResponseMessage(
+                content=tool_call.function.name, tool_calls=[tool_call]
+            )
+            tool__message = ToolMessage(content=tool_result, tool_call_id=tool_call_id)
+            extra_messages = LLMMessages([tool_calls_message, tool__message])
+        else:
+            tool__message = AssistantMessage(content=tool_result)
+            extra_messages = LLMMessages([tool__message])
         response_message = self.get_response(
-            "",
             extra_messages=extra_messages,
             recursion_level=recursion_level + 1,
         )
@@ -259,40 +230,32 @@ class HotelReservationsAssistant:
 
 SYSTEM_PROMPT = """
 You are a helpful hotel reservations assistant.
-You should not come up with any information, if you don't know something, just ask the user for more information or use a tool.
+You should not come up with any information, if you don't know something, just ask the user for more information.
+The name of guest is mandatory to make the reservation.
+You should present the user with the price per night before making the reservation. Use a 
+Ask the user for confirmation before making the reservation.
+You should say goodbye when you are done.
+"""
+
+SYSTEM_PROMPT_NO_FUNCTIONS = """
+You have with access to the following functions:
+
+{tools}
+
+To use these functions respond with:
+<multiplefunctions>
+    <functioncall> {fn} </functioncall>
+    <functioncall> {fn} </functioncall>
+    ...
+</multiplefunctions>
+
+Edge cases you must handle:
+- If you need to ask for more information, you can ask the user for it. Do not return any functions in this case.
+
+You should not come up with any information, if you don't know something, just ask the user for more information.
+The name of guest is mandatory to make the reservation.
+You should present the user with the price per night before making the reservation. Use a 
 Ask the user for confirmation before making the reservation.
 You should say goodbye when you are done.
 
-{tools_prompt}
-"""  # noqa E501
-
-TOOLS_PROMPT = """
-You have some tools available to help you with the user query.
-Here is how you should handle user requests:
-
-- Understand the user requirements.
-- Decide if you need to use a tool to get the information you need.
-- The tools available are: [get_hotel_price_per_night, make_reservation]
-- If you need to use a tool, just return the tool call, the result will appear in the next message.
-
-You must use the tool get_hotel_price_per_night to inform the user of the price per night and ask for confirmation before making the reservation.
-
-Here are the tools available for you to use:
-{tools}
---------------------
-
-Your response should always be in JSON format, using the following structure:
-{{
-    "content": "<your_response>"
-    "function_call": {{
-        "name": "<function_name>",
-        "arguments": {{
-            "<arg_1>": <arg_1_value>,
-            "<arg_2>": <arg_2_value>
-        }}
-    }}
-}}
----------------------
-Return only one of fields "content" or "function_call".
-
-"""  # noqa E501
+"""

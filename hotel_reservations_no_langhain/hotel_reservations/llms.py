@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from abc import abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
@@ -144,28 +145,12 @@ class OpenRouterLLM(OpenAILLM):
         )
         response_message = response.choices[0].message
         content = response_message.content or ""
-        tool_calls = self.extract_tool_calls(content)
+        content, tool_calls = extract_function_calls(content)
         message = ChatResponseMessage(content=content, tool_calls=tool_calls)
         self.llm_config.callbacks.on_chat_completions(
             self, messages, tools, response.__dict__, message
         )
         return message
-
-    def extract_tool_calls(
-        self, content: str
-    ) -> list[ChatCompletionMessageToolCall] | None:
-        if """function""" in content:
-            function_call = json.loads(content)
-            function_name = function_call["function"]
-            tool_input = json.dumps(function_call["parameters"])
-            tool_call = ChatCompletionMessageToolCall(
-                id="",
-                type="function",
-                function=Function(name=function_name, arguments=tool_input),
-            )
-            return [tool_call]
-        else:
-            return None
 
 
 class LiteLLM(BaseLLM):
@@ -197,18 +182,8 @@ class LiteLLM(BaseLLM):
             choice = response.choices[0]
             if isinstance(choice, Choices):
                 content = choice.message.content
-                print(f"Content: {content}")
-                decoded_content = self.decode_content(content)
-                response_content = (
-                    decoded_content["content"]
-                    if decoded_content and "content" in decoded_content
-                    else content
-                )
-                tool_calls = (
-                    self.extract_tool_calls(decoded_content)
-                    if decoded_content
-                    else None
-                )
+                content, tool_calls = extract_function_calls(content)
+                response_content = content if not tool_calls else ""
                 message = ChatResponseMessage(
                     content=response_content, tool_calls=tool_calls
                 )
@@ -221,32 +196,6 @@ class LiteLLM(BaseLLM):
         )
         return message
 
-    def extract_tool_calls(
-        self, decoded_content: dict
-    ) -> list[ChatCompletionMessageToolCall] | None:
-        if "function_call" not in decoded_content:
-            return None
-        function_call = decoded_content["function_call"]
-        if function_call is None:
-            return None
-        function_name = function_call["name"]
-        tool_input = json.dumps(function_call["arguments"])
-        tool_call = ChatCompletionMessageToolCall(
-            id="",
-            type="function",
-            function=Function(name=function_name, arguments=tool_input),
-        )
-        return [tool_call]
-
-    def decode_content(self, content: str) -> dict | None:
-        json_content = content.replace("```json", "").replace("```", "")
-        try:
-            response = json.loads(json_content)
-        except json.JSONDecodeError:
-            return None
-
-        return response
-
 
 LLMS = Literal[
     "openai-gpt-4",
@@ -255,6 +204,44 @@ LLMS = Literal[
     "litellm-gpt-4",
     "litellm-mixtral",
 ]
+
+
+def extract_function_calls(completion):
+    if isinstance(completion, str):
+        content = completion
+    else:
+        content = completion.content
+
+    pattern = r"<multiplefunctions>(.*?)</multiplefunctions>"
+    match = re.search(pattern, content, re.DOTALL)
+    if not match:
+        return content, None
+
+    multiplefn = match.group(1)
+    content = content.replace(multiplefn, "")
+    content = content.replace("<multiplefunctions></multiplefunctions>", "")
+    tool_calls = []
+    for fn_match in re.finditer(
+        r"<functioncall>(.*?)</functioncall>", multiplefn, re.DOTALL
+    ):
+        fn_text = fn_match.group(1)
+        try:
+            fn_json = json.loads(fn_text)
+            function_name = fn_json["name"]
+            arguments = json.dumps(fn_json["arguments"])
+            tool_call = ChatCompletionMessageToolCall(
+                id="",
+                type="function",
+                function=Function(
+                    name=function_name,
+                    arguments=arguments,
+                ),
+            )
+            tool_calls.append(tool_call)
+        except json.JSONDecodeError:
+            pass  # Ignore invalid JSON
+
+    return content, tool_calls
 
 
 class LLMManager:
@@ -270,9 +257,7 @@ class LLMManager:
             )
         elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(
-                llm_config.with_model(
-                    "mistralai/mixtral-8x7b-instruct"
-                ).with_function_calling()
+                llm_config.with_model("mistralai/mixtral-8x7b-instruct")
             )
         elif llm_name == "litellm-gpt-4":
             return LiteLLM(llm_config.with_model("openai/gpt-4"))
