@@ -1,15 +1,16 @@
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
 
 
 class LLMUser:
-    def __init__(self, llm: BaseLanguageModel, persona: str):
+    def __init__(self, llm: BaseLLM, persona: str):
         self.chat_history = []
         self.agent = self.build_agent(llm, persona)
 
-    def build_agent(self, llm: BaseLanguageModel, persona: str):
+    def build_agent(self, llm: BaseLLM, persona: str):
         user_prompt = USER_PROMPT.format(persona=persona)
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -18,7 +19,7 @@ class LLMUser:
                 ("user", "{input}"),
             ]
         )
-        chain = prompt | llm | StrOutputParser()
+        chain = prompt | llm.llm | StrOutputParser()
         return chain
 
     def chat(self, query: str):

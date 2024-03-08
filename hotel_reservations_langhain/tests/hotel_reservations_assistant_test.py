@@ -3,23 +3,32 @@ from unittest.mock import Mock
 
 from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
+from hotel_reservations.assistant import HotelReservationsAssistant
+from hotel_reservations.core import Hotel, find_hotels, make_reservation
+from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
 from agents_behave.user_conversation import UserConversation
-from hotel_reservations.assistant import HotelReservationsAssistant
-from hotel_reservations.core import Hotel, find_hotels, make_reservation
-from hotel_reservations.models_config import create_model_config
 
 load_dotenv()
 
 verbose = True
 
 
+def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
+    return LLMManager.create_llm(
+        llm_name=llm_name,
+        llm_config=LLMConfig(
+            name=name,
+            temperature=0.0,
+        ),
+    )
+
+
 def test_query_with_all_the_information():
     # Given
-    model_config = create_model_config("mixtral")
-    llm = model_config.llm
+    llm = create_llm("openrouter-mixtral", "all")
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),

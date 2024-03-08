@@ -1,8 +1,7 @@
+from hotel_reservations.chat_open_router import ChatOpenRouter
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_openai import ChatOpenAI
 from langchain_together import Together
-
-from hotel_reservations.chat_open_router import ChatOpenRouter
 
 
 class ModelConfig:

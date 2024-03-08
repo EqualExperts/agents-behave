@@ -2,53 +2,45 @@ import json
 import re
 from typing import Union
 
-from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
-from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.outputs import ChatGeneration, Generation
+from langchain.agents.agent import AgentOutputParser
+from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.exceptions import OutputParserException
+
+FINAL_ANSWER_ACTION = "Final Answer:"
 
 
-class FunctionCallAgentOutputParser(BaseOutputParser):
-    def _parse_ai_message(
-        self, message: BaseMessage
-    ) -> Union[AgentAction, AgentFinish]:
-        content = str(message.content)
-        return self._parse_ai_text(content)
+class FunctionCallAgentOutputParser(AgentOutputParser):
+    pattern = re.compile(r"^.*?`{3}(?:json)?\n?(.*?)`{3}.*?$", re.DOTALL)
+    """Regex pattern to parse the output."""
 
-    def _parse_ai_text(self, text: str) -> Union[AgentAction, AgentFinish]:
-        print(f"parsing text: {text}")
-        pattern = r'\{\s*"function_call":\s*\{.*?\}\s*\}\s*\}'
-        matches = re.findall(pattern, text, re.DOTALL)
-        if matches:
-            function_call = json.loads(matches[0])["function_call"]
-            function_name = function_call["name"]
-            tool_input = function_call["arguments"]
-            content_msg = f"responded: {text}\n" if text else "\n"
-            log = f"\nInvoking: `{function_name}` with `{tool_input}`\n{content_msg}\n"
-            result = AgentActionMessageLog(
-                tool=function_name,
-                tool_input=tool_input,
-                log=log,
-                message_log=[AIMessage(content=text)],
+    def get_format_instructions(self) -> str:
+        return FORMAT_INSTRUCTIONS
+
+    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+        print("text: ", text)
+        includes_answer = FINAL_ANSWER_ACTION in text
+        try:
+            found = self.pattern.search(text)
+            if not found:
+                # Fast fail to parse Final Answer.
+                raise ValueError("action not found")
+            action = found.group(1)
+            response = json.loads(action.strip())
+            includes_action = "action" in response
+            if includes_answer and includes_action:
+                raise OutputParserException(
+                    "Parsing LLM output produced a final answer "
+                    f"and a parse-able action: {text}"
+                )
+            print(f"response: {response}")
+            return AgentAction(
+                response["action"], response.get("action_input", {}), text
             )
 
-        else:
-            result = AgentFinish(return_values={"output": text}, log=str(text))
-
-        return result
-
-    def parse_result(
-        self, result: list[Generation], *, partial: bool = False
-    ) -> Union[AgentAction, AgentFinish]:
-        if isinstance(result[0], ChatGeneration):
-            message = result[0].message
-            return self._parse_ai_message(message)
-        if isinstance(result[0], Generation):
-            return self._parse_ai_text(result[0].text)
-
-        raise ValueError(
-            f"This output parser only works on ChatGeneration or Generation output (got {type(result[0])})"
-        )
-
-    def parse(self, _: str) -> Union[AgentAction, AgentFinish]:
-        raise ValueError("Can only parse messages")
+        except Exception:
+            # if not includes_answer:
+            #     raise OutputParserException(f"Could not parse LLM output: {text}")
+            output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
+            print(f"output: {output}")
+            return AgentFinish({"output": output}, text)

@@ -1,13 +1,14 @@
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
+from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
+
 
 class ConversationAnalyzer:
-    def __init__(self, llm: BaseLanguageModel):
+    def __init__(self, llm: BaseLLM):
         self.chain = self.build_chain(llm)
 
     def invoke(
@@ -22,7 +23,7 @@ class ConversationAnalyzer:
         )
         return response
 
-    def build_chain(self, llm: BaseLanguageModel):
+    def build_chain(self, llm: BaseLLM):
         prompt = PromptTemplate(
             template=PROMPT, input_variables=["criteria", "conversation"]
         )
@@ -31,7 +32,7 @@ class ConversationAnalyzer:
                 ("system", PROMPT),
             ]
         )
-        chain = prompt | llm | JsonOutputParser()
+        chain = prompt | llm.llm | JsonOutputParser()
         return chain
 
 

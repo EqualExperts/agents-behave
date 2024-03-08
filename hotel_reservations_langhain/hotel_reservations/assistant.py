@@ -1,24 +1,26 @@
-import json
 from datetime import date
 from typing import Any
 
 from hotel_reservations.core import FindHotels, MakeReservation
-from hotel_reservations.function_call_agent_output_parser import (
-    FunctionCallAgentOutputParser,
-)
-from hotel_reservations.open_ai_functions_agent_output_parser_copy import (
-    OpenAIFunctionsAgentOutputParser_Copy,
-)
 from langchain.agents import AgentExecutor
-from langchain.agents.format_scratchpad import format_to_openai_function_messages
+from langchain.agents.format_scratchpad import (
+    format_log_to_str,
+    format_to_openai_function_messages,
+)
+from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
+from langchain.tools.render import render_text_description_and_args
 from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_openai import ChatOpenAI
+
+from hotel_reservations_langhain.hotel_reservations.function_call_agent_output_parser import (
+    FunctionCallAgentOutputParser,
+)
+from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
 
 
 class MakeReservationInput(BaseModel):
@@ -39,16 +41,33 @@ class FindHotelsInput(BaseModel):
 class HotelReservationsAssistant:
     def __init__(
         self,
-        llm: BaseLanguageModel,
+        llm: BaseLLM,
         make_reservation: MakeReservation,
         find_hotels: FindHotels,
     ):
         self.make_reservation = make_reservation
         self.find_hotels = find_hotels
-        self.chat_history = []
+        self.chat_history: list[BaseMessage] = []
         self.agent = self.build_agent(llm)
 
-    def build_agent(self, llm):
+    def build_agent(self, llm: BaseLLM):
+        tools = self.build_tools()
+        agent: Any
+        if llm.supports_function_calling():
+            agent = self.build_agent_with_function_calling(llm.llm, tools)
+        else:
+            agent = self.build_agent_without_function_calling(llm.llm, tools)
+
+        return AgentExecutor(
+            agent=agent,
+            tools=tools,
+            verbose=True,
+            return_intermediate_steps=True,
+            handle_parsing_errors=True,
+            max_iterations=5,
+        )
+
+    def build_agent_with_function_calling(self, llm: BaseLanguageModel, tools: list):
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", SYSTEM_PROMPT),
@@ -58,40 +77,43 @@ class HotelReservationsAssistant:
             ]
         )
 
-        tools = self.build_tools()
         functions = [convert_to_openai_function(tool) for tool in tools]
+        llm_with_tools = llm.bind(functions=functions)
 
-        supports_functions = type(llm) == ChatOpenAI  # noqa E501
-        if supports_functions:
-            print("use native function")
-        else:
-            print("does not support functions")
-        if supports_functions:
-            llm = llm.bind(functions=functions)
-            prompt = prompt.partial(tools_prompt="")
-            parser = OpenAIFunctionsAgentOutputParser_Copy()
-        else:
-            tools_json = f"{json.dumps(functions, indent=2)}\n"
-            tools_prompt = TOOLS_PROMPT.format(tools=tools_json)
-            prompt = prompt.partial(tools_prompt=tools_prompt)
-            parser = FunctionCallAgentOutputParser()
-
-        agent: Any = (
+        return (
             RunnablePassthrough.assign(
                 agent_scratchpad=lambda x: format_to_openai_function_messages(
                     x["intermediate_steps"]
                 )
             )
             | prompt
-            | llm
-            | parser
+            | llm_with_tools
+            | OpenAIFunctionsAgentOutputParser()
         )
 
-        agent_executor = AgentExecutor(
-            agent=agent,
-            tools=tools,
+    def build_agent_without_function_calling(self, llm: BaseLanguageModel, tools: list):
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", SYSTEM_PROMPT_NO_FUNCTION_CALLING),
+                MessagesPlaceholder(variable_name="chat_history"),
+                ("user", "{input}"),
+            ]
         )
-        return agent_executor
+        prompt = prompt.partial(
+            tool_description_with_args=render_text_description_and_args(tools),
+            tool_names=", ".join([t.name for t in tools]),
+        )
+
+        llm_with_stop = llm.bind(stop=["\nObservation"])
+
+        return (
+            RunnablePassthrough.assign(
+                agent_scratchpad=lambda x: format_log_to_str(x["intermediate_steps"])
+            )
+            | prompt
+            | llm_with_stop
+            | FunctionCallAgentOutputParser()
+        )
 
     def chat(self, query: str):
         response = self.agent.invoke(
@@ -125,33 +147,45 @@ class HotelReservationsAssistant:
         return tools
 
 
-SYSTEM_PROMPT = """
-You are a helpful hotel reservations assistant.
-You should not come up with any information, if you don't know something, just ask the user for more information or use a tool.
-The name of the guest is mandatory to make the reservation.
+SYSTEM_PROMPT = "You are a helpful assistant that can make room reservations."
 
-{tools_prompt}
+SYSTEM_PROMPT_NO_FUNCTION_CALLING = """You are a helpful assistant that can make room reservations. 
+You should keep a conversation with the user and help them make a reservation. Ask for all the information needed to make a reservation.
+
+You have access to the following tools:
+
+{tool_description_with_args}
+
+The way you use the tools is by specifying a json blob.
+Specifically, this json should have a `action` key (name of the tool to use) and a `action_input` key (input to the tool).
+
+The only values that should be in the "action" field are: {tool_names}
+
+The $JSON_BLOB should only contain a SINGLE action and MUST be formatted as markdown, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
+
+```
+{{
+  "action": $TOOL_NAME,
+  "action_input": $INPUT
+}}
+```
+Make sure to have the $INPUT in the right format for the tool you are using, and do not put variable names as input if you can find the right values.
+
+You should ALWAYS use the following format:
+
+Thought: you should always think about one action to take. Then use the action as follows:
+Action:
+```
+$JSON_BLOB
+```
+Observation: the result of the action
+... (this Thought/Action/Observation can repeat N times, you should take several steps when needed. The $JSON_BLOB must only use a SINGLE action at a time.)
+
+Use the Observation to keep the conversation with the user and help them make a reservation. Ask for all the information needed to make a reservation.
+
+{agent_scratchpad}
 """  # noqa E501
 
+HUMAN_PROMPT = "Question: {input}"
 
-TOOLS_PROMPT = """
-    You have some tools available to help you with the user query.
-    You MUST use a tool to make a reservation.
-    Here are the tools available to you:
-    {tools}
-    --------------------
-    
-    Think about the user query step by step and decide if you need to use a tool for the next step.
-    Use only one tool at a time.
-
-    if you do need to use a tool, you MUST return a response in the following JSON format:
-    {{
-        "function_call": {{
-            "name": "add_numbers",
-            "arguments": {{
-                "a": 1,
-                "b": 2
-            }}
-        }}
-    }}
-"""
+SCRATCHPAD_PROMPT = "{agent_scratchpad}"
