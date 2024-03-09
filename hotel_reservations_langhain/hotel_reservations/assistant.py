@@ -17,10 +17,10 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_function
 
+from agents_behave.base_llm import BaseLLM
 from hotel_reservations_langhain.hotel_reservations.function_call_agent_output_parser import (
     FunctionCallAgentOutputParser,
 )
-from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
 
 
 class MakeReservationInput(BaseModel):
@@ -72,7 +72,6 @@ class HotelReservationsAssistant:
             [
                 ("system", SYSTEM_PROMPT),
                 MessagesPlaceholder(variable_name="chat_history"),
-                ("user", "{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
@@ -96,7 +95,6 @@ class HotelReservationsAssistant:
             [
                 ("system", SYSTEM_PROMPT_NO_FUNCTION_CALLING),
                 MessagesPlaceholder(variable_name="chat_history"),
-                ("user", "{input}"),
             ]
         )
         prompt = prompt.partial(
@@ -116,10 +114,8 @@ class HotelReservationsAssistant:
         )
 
     def chat(self, query: str):
-        response = self.agent.invoke(
-            {"input": query, "chat_history": self.chat_history},
-        )
         self.chat_history.append(HumanMessage(content=query))
+        response = self.agent.invoke({"chat_history": self.chat_history})
         self.chat_history.append(AIMessage(content=response["output"]))
         return response
 
@@ -147,7 +143,13 @@ class HotelReservationsAssistant:
         return tools
 
 
-SYSTEM_PROMPT = "You are a helpful assistant that can make room reservations."
+SYSTEM_PROMPT = """
+You are a helpful hotel reservations assistant.
+You should not come up with any information, if you don't know something, just ask the user for more information.
+The name of guest is mandatory to make the reservation.
+You should present the user with the price per night before making the reservation.
+Ask the user for confirmation before making the reservation.
+"""
 
 SYSTEM_PROMPT_NO_FUNCTION_CALLING = """You are a helpful assistant that can make room reservations. 
 You should keep a conversation with the user and help them make a reservation. Ask for all the information needed to make a reservation.
@@ -181,7 +183,7 @@ $JSON_BLOB
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times, you should take several steps when needed. The $JSON_BLOB must only use a SINGLE action at a time.)
 
-Use the Observation to keep the conversation with the user and help them make a reservation. Ask for all the information needed to make a reservation.
+If you need to ask for more information, you can ask the user for it. Do not return the $JSON_BLOB if you need to ask for more information.
 
 {agent_scratchpad}
 """  # noqa E501

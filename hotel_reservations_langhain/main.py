@@ -8,7 +8,7 @@ from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_conversation import UserConversation
+from agents_behave.user_agent_conversation import UserAgentConversation
 
 
 def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
@@ -39,32 +39,28 @@ def run(llm_name: LLMS):
         My budget is $350 per night.
     """
     llm_user = LLMUser(
-        llm=create_llm(
-            llm_name=llm_name,
-            name="LLMUser",
-        ),
+        llm=create_llm(llm_name=llm_name, name="LLMUser"),
         persona=persona,
     )
-
-    query = "Hi"
 
     def assistant_chat(query: str):
         response = assistant.chat(query)
         return response["output"]
 
-    conversation = UserConversation(
-        assistant=assistant_chat,
+    conversation = UserAgentConversation(
         user=llm_user,
-        max_iterations=10,
+        assistant=assistant_chat,
+        llm=create_llm(llm_name=llm_name, name="LLMUser"),
         stop_condition=lambda state: "bye"
         in str(state.chat_history[-1].content).lower(),
     )
 
-    conversation_state = conversation.start_conversation(query)
+    conversation_state = conversation.start()
 
     criteria = [
-        "Say hello to the user",
+        "Get the price per night for the reservation and ask the user if it is ok",
         "Ask for all the information needed to make a reservation",
+        "Make the reservation",
         "Be very polite and helpful",
     ]
     criteria = [c.strip() for c in criteria if c.strip()]

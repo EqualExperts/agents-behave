@@ -1,11 +1,23 @@
+from abc import abstractmethod
+
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
+from agents_behave.base_llm import BaseLLM
 
 
-class LLMUser:
+class User:
+    @abstractmethod
+    def start(self) -> str:
+        pass
+
+    @abstractmethod
+    def chat(self, llm_response: str) -> str:
+        pass
+
+
+class LLMUser(User):
     def __init__(self, llm: BaseLLM, persona: str):
         self.chat_history = []
         self.agent = self.build_agent(llm, persona)
@@ -16,32 +28,35 @@ class LLMUser:
             [
                 ("system", user_prompt),
                 MessagesPlaceholder(variable_name="chat_history"),
-                ("user", "{input}"),
             ]
         )
         chain = prompt | llm.llm | StrOutputParser()
         return chain
 
+    def start(self):
+        return self.get_response()
+
     def chat(self, query: str):
-        response = self.agent.invoke(
-            {"input": query, "chat_history": self.chat_history},
-        )
         self.chat_history.append(HumanMessage(content=query))
+        return self.get_response()
+
+    def get_response(self):
+        response = self.agent.invoke(
+            {"chat_history": self.chat_history},
+        )
         self.chat_history.append(AIMessage(content=response))
         return response
 
 
 USER_PROMPT = """
-    Your role is to simulate a user that asked an Assistant to do a task. Remember, you are not the Assistant, you are the user.
-    If you don't know the answer, just pick a random one.
-
-    Here is some information about you:
+    You are a person with the following persona:
     {persona}
-
-    When the LLM finishes the task, it will not ask a question, it will just give you the result.
-    You should then say "bye" to the LLM to end the conversation.
-
-    Conversation:
-    {{chat_history}}
     -------------
+
+    You job is to interact with an agent that will asist you in achieving your goals.
+
+    You should then say "bye" when you think the conversation is over.
+    
+    You should start by stating what you want to do.
+
     """  # noqa E501

@@ -3,9 +3,10 @@ Feature: Book a room in a hotel
   Scenario: A helpful user
      Given I'm a user with the following persona:
         """
-        My name is Pedro Sousa.
-        I want to book a room in Kensington hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        Your name is Pedro Sousa.
+        You want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
         It will be for 2 adults and 1 child.
+        Your budget is $350 per night.
         """
 
       When I say "Hi"

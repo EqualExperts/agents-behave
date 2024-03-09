@@ -65,4 +65,6 @@ SYSTEM_PROMPT = """
     Here is some information about you:
     {persona}
     -------------
+
+    You should start by stating what you want to do.
     """  # noqa E501

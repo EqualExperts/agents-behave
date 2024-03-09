@@ -1,9 +1,10 @@
 from typing import Callable
 
 from colorama import Fore
-from hotel_reservations.llm_user import User
-from hotel_reservations.llms import BaseLLM, LLMMessages
-from hotel_reservations.messages import AssistantMessage, LLMMessage, UserMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+
+from agents_behave.base_llm import BaseLLM
+from agents_behave.llm_user import User
 
 Assistant = Callable[[str], str]
 
@@ -17,31 +18,35 @@ def stop_on_max_iterations(max_iterations: int):
 
 class UserAgentConversationState:
     def __init__(self):
-        self.chat_history = LLMMessages()
+        self.chat_history: list[BaseMessage] = []
         self.iterations_count = 0
 
-    def add_message(self, message: LLMMessage):
-        self.chat_history.add_message(message)
+    def add_message(self, message: BaseMessage):
+        self.chat_history.append(message)
 
     def increment_iterations(self):
         self.iterations_count += 1
 
-    def last_message(self) -> LLMMessage:
-        return self.chat_history.messages[-1]
+    def last_message(self) -> BaseMessage:
+        return self.chat_history[-1]
 
-    def last_assistant_message(self) -> LLMMessage | None:
+    def last_assistant_message(self) -> BaseMessage | None:
         return next(
             (
                 message
-                for message in reversed(self.chat_history.messages)
-                if isinstance(message, AssistantMessage)
+                for message in reversed(self.chat_history)
+                if isinstance(message, AIMessage)
             ),
             None,
         )
 
     def last_assistant_message_contains(self, s: str) -> bool:
         a = self.last_assistant_message()
-        return s.lower() in a.content.lower() if a and a.content else False
+        return (
+            s.lower() in a.content.lower()
+            if a and a.content and isinstance(a.content, str)
+            else False
+        )
 
 
 class UserAgentConversation:
@@ -62,20 +67,17 @@ class UserAgentConversation:
         self.state = UserAgentConversationState()
 
     def start(self) -> UserAgentConversationState:
-        print(
-            f"{Fore.YELLOW}Starting conversation with {self.llm.llm_config.model}{Fore.RESET}"
-        )
         user_message = self.user.start()
         self.state = UserAgentConversationState()
-        self.state.add_message(UserMessage(content=user_message))
+        self.state.add_message(HumanMessage(content=user_message))
         user_response = user_message
         while not self.stop_condition(self.state):
             print(f"{Fore.YELLOW}Iteration {self.state.iterations_count}{Fore.RESET}")
             llm_response = self.assistant(user_response)
             user_response = self.user.chat(llm_response)
 
-            self.state.add_message(AssistantMessage(content=llm_response))
-            self.state.add_message(UserMessage(content=user_response))
+            self.state.add_message(AIMessage(content=llm_response))
+            self.state.add_message(HumanMessage(content=user_response))
 
             self.state.increment_iterations()
 

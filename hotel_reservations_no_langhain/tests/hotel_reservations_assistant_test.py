@@ -19,7 +19,7 @@ from hotel_reservations_no_langhain.hotel_reservations.callbacks import (
 
 load_dotenv()
 
-default_llm_name: LLMS = "litellm-mixtral"
+default_llm_name: LLMS = "openai-gpt-4"
 
 
 def create_llm(name: str, llm_name: LLMS = default_llm_name) -> BaseLLM:
@@ -55,7 +55,7 @@ def test_i_want_to_book_a_room():
         assistant,
         llm=create_llm("UserAgentConversation"),
         stop_condition=lambda state: state.iterations_count >= 10
-        or "bye" in str(state.last_message().content).lower(),
+        or state.last_assistant_message_contains("bye"),
     )
     conversation_state = conversation.start()
 

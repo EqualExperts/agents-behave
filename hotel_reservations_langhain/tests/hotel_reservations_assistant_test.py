@@ -9,14 +9,16 @@ from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_conversation import UserConversation
+from agents_behave.user_agent_conversation import UserAgentConversation
 
 load_dotenv()
 
 verbose = True
 
+default_llm_name: LLMS = "openai-gpt-4"
 
-def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
+
+def create_llm(name: str, llm_name: LLMS = default_llm_name) -> BaseLLM:
     return LLMManager.create_llm(
         llm_name=llm_name,
         llm_config=LLMConfig(
@@ -28,7 +30,7 @@ def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
 
 def test_query_with_all_the_information():
     # Given
-    llm = create_llm("openrouter-mixtral", "all")
+    llm = create_llm("all")
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),
@@ -38,29 +40,27 @@ def test_query_with_all_the_information():
     assistant = HotelReservationsAssistant(
         llm=llm, make_reservation=make_reservation_mock, find_hotels=find_hotels_mock
     )
-    persona = """My name is Pedro Sousa.
-        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+    persona = """
+        Your name is Pedro Sousa.
+        You want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
         It will be for 2 adults and 1 child.
-        My budget is $350 per night.
+        Your budget is $350 per night.
     """
     llm_user = LLMUser(llm=llm, persona=persona)
 
     # When
-    query = "Hi"
-
     def assistant_chat(query: str):
         response = assistant.chat(query)
         return response["output"]
 
-    conversation = UserConversation(
+    conversation = UserAgentConversation(
+        llm=llm,
         assistant=assistant_chat,
         user=llm_user,
-        max_iterations=10,
-        stop_condition=lambda state: "bye"
-        in str(state.chat_history[-1].content).lower(),
+        stop_condition=lambda state: state.last_assistant_message_contains("bye"),
     )
 
-    conversation_state = conversation.start_conversation(query)
+    conversation_state = conversation.start()
 
     # Then
     criteria = [

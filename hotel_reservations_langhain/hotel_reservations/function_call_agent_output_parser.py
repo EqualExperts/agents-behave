@@ -18,7 +18,6 @@ class FunctionCallAgentOutputParser(AgentOutputParser):
         return FORMAT_INSTRUCTIONS
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        print("text: ", text)
         includes_answer = FINAL_ANSWER_ACTION in text
         try:
             found = self.pattern.search(text)
@@ -33,7 +32,6 @@ class FunctionCallAgentOutputParser(AgentOutputParser):
                     "Parsing LLM output produced a final answer "
                     f"and a parse-able action: {text}"
                 )
-            print(f"response: {response}")
             return AgentAction(
                 response["action"], response.get("action_input", {}), text
             )
@@ -42,5 +40,4 @@ class FunctionCallAgentOutputParser(AgentOutputParser):
             # if not includes_answer:
             #     raise OutputParserException(f"Could not parse LLM output: {text}")
             output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
-            print(f"output: {output}")
             return AgentFinish({"output": output}, text)

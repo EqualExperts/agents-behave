@@ -3,12 +3,12 @@ from unittest.mock import Mock
 
 import behave
 from hamcrest import assert_that, greater_than
+from hotel_reservations.assistant import HotelReservationsAssistant
+from hotel_reservations.core import Hotel, find_hotels, make_reservation
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_conversation import UserConversation
-from hotel_reservations.assistant import HotelReservationsAssistant
-from hotel_reservations.core import Hotel, find_hotels, make_reservation
+from agents_behave.user_agent_conversation import UserAgentConversation
 
 
 def format_date(date: str):
@@ -17,7 +17,7 @@ def format_date(date: str):
 
 @behave.given("I'm a user with the following persona")
 def step_impl(context):  # noqa F811 # type: ignore
-    llm = context.model_config.llm
+    llm = context.llm
     context.llm_user = LLMUser(llm=llm, persona=context.text)
 
 
@@ -28,7 +28,7 @@ def step_impl(context, query):  # noqa F811 # type: ignore
 
 @behave.then('The conversation should end when the user says "{stop}"')
 def step_impl(context, stop):  # noqa F811 # type: ignore
-    llm = context.model_config.llm
+    llm = context.llm
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London"),
@@ -45,17 +45,14 @@ def step_impl(context, stop):  # noqa F811 # type: ignore
         response = assistant.chat(query)
         return response["output"]
 
-    context.conversation = UserConversation(
+    context.conversation = UserAgentConversation(
+        llm=llm,
         assistant=assistant_chat,
         user=context.llm_user,
-        max_iterations=10,
-        stop_condition=lambda state: stop.lower()
-        in str(state.chat_history[-1].content).lower(),
+        stop_condition=lambda state: state.last_assistant_message_contains(stop),
     )
 
-    context.conversation_state = context.conversation.start_conversation(
-        context.query,
-    )
+    context.conversation_state = context.conversation.start()
 
 
 @behave.then("A reservation should be made for the user with the following details")
@@ -82,7 +79,7 @@ def step_impl(context):  # noqa F811 # type: ignore
 def step_impl(context, score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyzer(llm=context.model_config.llm)
+    conversationAnalyzer = ConversationAnalyzer(llm=context.llm)
     chat_history = context.conversation_state.chat_history
     response = conversationAnalyzer.invoke(chat_history=chat_history, criteria=criteria)
     assert_that(

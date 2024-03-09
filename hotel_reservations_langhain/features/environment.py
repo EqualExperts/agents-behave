@@ -1,10 +1,17 @@
 from dotenv import load_dotenv
 
-from hotel_reservations.models_config import create_model_config
+from agents_behave.base_llm import LLMConfig
+from hotel_reservations_langhain.hotel_reservations.llms import LLMManager
 
 load_dotenv()
 
 
 def before_all(context):
-    model_config = create_model_config("mixtral")
-    context.model_config = model_config
+    llm = LLMManager.create_llm(
+        llm_name="openai-gpt-4",
+        llm_config=LLMConfig(
+            name="all",
+            temperature=0.0,
+        ),
+    )
+    context.llm = llm
