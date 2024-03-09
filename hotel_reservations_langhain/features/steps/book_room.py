@@ -21,18 +21,23 @@ def step_impl(context):  # noqa F811 # type: ignore
     context.llm_user = LLMUser(llm=llm, persona=context.text)
 
 
-@behave.when('I say "{query}"')
-def step_impl(context, query):  # noqa F811 # type: ignore
-    context.query = query
+@behave.given("We have the following hotels")
+def step_impl(context):  # noqa F811 # type: ignore
+    hotels = []
+    for row in context.table:
+        hotels.append(
+            Hotel(row["Id"], row["Name"], row["Location"], row["PricePerNight"])
+        )
+    context.hotels = hotels
 
 
-@behave.then('The conversation should end when the user says "{stop}"')
-def step_impl(context, stop):  # noqa F811 # type: ignore
+@behave.when(
+    "I start a conversation that should end when the assistant says {stop_word}"
+)
+def step_impl(context, stop_word):  # noqa F811 # type: ignore
     llm = context.llm
     make_reservation_mock = Mock(make_reservation, return_value=True)
-    find_hotels_return_value = [
-        Hotel("123", name="Kensington Hotel", location="London"),
-    ]
+    find_hotels_return_value = context.hotels
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
     assistant = HotelReservationsAssistant(
         llm=llm,
@@ -49,7 +54,7 @@ def step_impl(context, stop):  # noqa F811 # type: ignore
         llm=llm,
         assistant=assistant_chat,
         user=context.llm_user,
-        stop_condition=lambda state: state.last_assistant_message_contains(stop),
+        stop_condition=lambda state: state.last_assistant_message_contains(stop_word),
     )
 
     context.conversation_state = context.conversation.start()
