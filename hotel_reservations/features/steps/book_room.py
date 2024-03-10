@@ -3,12 +3,12 @@ from unittest.mock import Mock
 
 import behave
 from hamcrest import assert_that, greater_than
-from hotel_reservations.assistant import HotelReservationsAssistant
-from hotel_reservations.core import Hotel, find_hotels, make_reservation
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
 from agents_behave.user_agent_conversation import UserAgentConversation
+from hotel_reservations.assistant import HotelReservationsAssistant
+from hotel_reservations.core import Hotel, find_hotels, make_reservation
 
 
 def format_date(date: str):
@@ -45,6 +45,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
         find_hotels=find_hotels_mock,
     )
     context.make_reservation_mock = make_reservation_mock
+    context.find_hotels_mock = find_hotels_mock
 
     def assistant_chat(query: str):
         response = assistant.chat(query)
@@ -58,6 +59,11 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
     )
 
     context.conversation_state = context.conversation.start()
+
+
+@behave.then("The assistant should get the hotels in {location}")
+def step_impl(context, location):  # noqa F811 # type: ignore
+    context.find_hotels_mock.assert_called_once_with(location)
 
 
 @behave.then("A reservation should be made for the user with the following details")

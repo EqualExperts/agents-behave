@@ -49,14 +49,17 @@ class LLMUser(User):
 
 
 USER_PROMPT = """
-    You are a person with the following persona:
+    Your role is to simulate a user interacting with an LLM assistant.
+    Your persona defines how you will interact with the assistant and also the goals you want to achieve.
+    You should then say "bye" when you think the conversation is over.
+    You are not suppose to assist anyone, just to interact with the assistant.
+    Start by stating your goals or just say "hi" to start the conversation.
+    DO NOT start with something like "Hi! How can I assist you today?".
+    
+    Here is your persona (expressed in first person):
+    -------------
     {persona}
     -------------
 
-    You job is to interact with an agent that will asist you in achieving your goals.
-
-    You should then say "bye" when you think the conversation is over.
-    
-    You should start by stating what you want to do.
-
+    User:
     """  # noqa E501
