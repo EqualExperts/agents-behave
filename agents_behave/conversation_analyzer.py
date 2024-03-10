@@ -4,7 +4,7 @@ from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
-from hotel_reservations_langhain.hotel_reservations.llms import BaseLLM
+from agents_behave.base_llm import BaseLLM
 
 
 class ConversationAnalyzer:

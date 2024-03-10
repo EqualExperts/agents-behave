@@ -4,9 +4,7 @@ from typing import Literal
 from langchain_openai import ChatOpenAI
 
 from agents_behave.base_llm import BaseLLM, LLMConfig
-from hotel_reservations_langhain.hotel_reservations.chat_open_router import (
-    ChatOpenRouter,
-)
+from hotel_reservations.chat_open_router import ChatOpenRouter
 
 
 class OpenAILLM(BaseLLM):
@@ -14,7 +12,7 @@ class OpenAILLM(BaseLLM):
         self,
         llm_config: LLMConfig,
     ):
-        llm_config = LLMConfig(model="gpt-4-turbo-preview") | llm_config
+        llm_config = LLMConfig(model="gpt-3.5-turbo") | llm_config
         llm = ChatOpenAI(
             model=llm_config.model or "",
             temperature=0.0,
@@ -46,6 +44,7 @@ class OpenRouterLLM(BaseLLM):
 
 
 LLMS = Literal[
+    "openai-gpt-3.5",
     "openai-gpt-4",
     "openrouter-mixtral",
     "together-mixtral",
@@ -59,7 +58,12 @@ class LLMManager:
         llm_name: LLMS, llm_config: LLMConfig = LLMConfig.default()
     ) -> BaseLLM:
         llm_config = llm_config.with_llm_name(llm_name)
-        if llm_name == "openai-gpt-4":
+        if llm_name == "openai-gpt-3.5":
+            return OpenAILLM(
+                llm_config.with_model("gpt-3.5-turbo").with_function_calling()
+            )
+
+        elif llm_name == "openai-gpt-4":
             return OpenAILLM(
                 llm_config.with_model("gpt-4-turbo-preview").with_function_calling()
             )

@@ -1,7 +1,6 @@
 from datetime import date
 from typing import Any
 
-from hotel_reservations.core import FindHotels, MakeReservation
 from langchain.agents import AgentExecutor
 from langchain.agents.format_scratchpad import (
     format_log_to_str,
@@ -18,7 +17,8 @@ from langchain_core.tools import tool
 from langchain_core.utils.function_calling import convert_to_openai_function
 
 from agents_behave.base_llm import BaseLLM
-from hotel_reservations_langhain.hotel_reservations.function_call_agent_output_parser import (
+from hotel_reservations.core import FindHotels, MakeReservation
+from hotel_reservations.function_call_agent_output_parser import (
     FunctionCallAgentOutputParser,
 )
 

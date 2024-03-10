@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 from agents_behave.base_llm import LLMConfig
-from hotel_reservations_langhain.hotel_reservations.llms import LLMManager
+from hotel_reservations.llms import LLMManager
 
 load_dotenv()
 

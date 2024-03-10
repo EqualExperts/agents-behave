@@ -3,19 +3,19 @@ from unittest.mock import Mock
 
 from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
-from hotel_reservations.assistant import HotelReservationsAssistant
-from hotel_reservations.core import Hotel, find_hotels, make_reservation
-from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 
 from agents_behave.conversation_analyzer import ConversationAnalyzer
 from agents_behave.llm_user import LLMUser
 from agents_behave.user_agent_conversation import UserAgentConversation
+from hotel_reservations.assistant import HotelReservationsAssistant
+from hotel_reservations.core import Hotel, find_hotels, make_reservation
+from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
 
 load_dotenv()
 
 verbose = True
 
-default_llm_name: LLMS = "openai-gpt-4"
+default_llm_name: LLMS = "openai-gpt-3.5"
 
 
 def create_llm(name: str, llm_name: LLMS = default_llm_name) -> BaseLLM:
