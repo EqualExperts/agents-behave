@@ -15,7 +15,7 @@ load_dotenv()
 
 verbose = True
 
-default_llm_name: LLMS = "openai-gpt-3.5"
+default_llm_name: LLMS = "openai-gpt-4"
 
 
 def create_llm(name: str, llm_name: LLMS = default_llm_name) -> BaseLLM:
