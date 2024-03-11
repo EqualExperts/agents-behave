@@ -35,6 +35,7 @@ Feature: Book a room in a hotel
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
       """
 
+  @wip
   Scenario: A rough user
      Given I'm a user with the following persona:
         """
@@ -68,12 +69,11 @@ Feature: Book a room in a hotel
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
       """
 
-  @wip
   Scenario: using relative dates
      Given I'm a user with the following persona:
         """
-        Your name is Pedro Sousa.
-        You want to book a room in an hotel in London, starting in next Wednesday and ending in next Friday, for 2 guests
+        My name is Pedro Sousa.
+        I want to book a room in an hotel in London, starting in next Wednesday and ending in next Friday, for 2 guests
         """
 
        And We have the following hotels:

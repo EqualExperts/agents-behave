@@ -7,14 +7,14 @@ We want to develop an LLM agent that can help users to book hotel rooms. The age
 *Note: This is a very simple example. In the real world, we would need to consider many other aspects of booking a hotel room, like payment, cancellation, etc. But for this example, we will keep it simple.*
 
 Ok, so how do we start? And how do we test our agent?
-We are building an agent that can have a conversation with a user. In order to test it, we need to be able to simulate a conversation between the user and the agent. We also need to be able to analyze the conversation to see if the agent is doing a good job. And, most importantly, we need confirm that the API (or function) that actually books the room is being called with the right parameters.
-It is also important to be test the agent with different types of users and different types of requests.
+We are building an agent that can have a conversation with a user. In order to test it, we need to be able to simulate a conversation between the user and the agent. We also need to be able to analyze the conversation to see if the agent is doing a good job. And, most importantly, we need confirm that the API (or function) that actually books the room is being called with the right arguments.
+It is also important to be able to test the agent with different types of users and different types of requests.
 
 So, we will need:
 
 - A user that can maintain a conversation with the agent. The "user" needs to book a room in some hotel at certain dates. The user will also have some kind of persona, so we can test the agent with different types of users.
 - A way to check if the reservation was made correctly. We will use dependency injection to pass a function that will be called to book the room. We can then mock this function to check if it was called with the right parameters.
-- A way to analyze the conversation. We will use a simple scoring system to check if the agent is doing a good job.
+- A way to analyze the conversation. We will use a simple scoring system along with a list of criterias to check if the agent is doing a good job.
 
 We will also use dependency injection to pass an LLM to the classes that need it. This way we can try different models and see which one works best.
 

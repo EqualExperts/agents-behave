@@ -17,8 +17,10 @@ def format_date(date: str):
 
 @behave.given("I'm a user with the following persona")
 def step_impl(context):  # noqa F811 # type: ignore
-    llm = context.llm
-    context.llm_user = LLMUser(llm=llm, persona=context.text)
+    context.llm_user = LLMUser(
+        llm=context.openrouter_llm,
+        persona=context.text,
+    )
 
 
 @behave.given("We have the following hotels")
@@ -40,12 +42,11 @@ def step_impl(context, date):  # noqa F811 # type: ignore
     "I start a conversation that should end when the assistant says {stop_word}"
 )
 def step_impl(context, stop_word):  # noqa F811 # type: ignore
-    llm = context.llm
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = context.hotels
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
     assistant = HotelReservationsAssistant(
-        llm=llm,
+        llm=context.open_ai_llm,
         make_reservation=make_reservation_mock,
         find_hotels=find_hotels_mock,
     )
@@ -57,7 +58,6 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
         return response["output"]
 
     context.conversation = UserAgentConversation(
-        llm=llm,
         assistant=assistant_chat,
         user=context.llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains(stop_word),
@@ -95,7 +95,7 @@ def step_impl(context):  # noqa F811 # type: ignore
 def step_impl(context, score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyzer(llm=context.llm)
+    conversationAnalyzer = ConversationAnalyzer(llm=context.openrouter_llm)
     chat_history = context.conversation_state.chat_history
     response = conversationAnalyzer.invoke(chat_history=chat_history, criteria=criteria)
     assert_that(

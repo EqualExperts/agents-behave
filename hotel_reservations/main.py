@@ -7,10 +7,10 @@ from agents_behave.llm_user import LLMUser
 from agents_behave.user_agent_conversation import UserAgentConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
-from hotel_reservations.llms import LLMS, BaseLLM, LLMConfig, LLMManager
+from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMConfig, LLMManager
 
 
-def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
+def create_llm(llm_name: LLM_NAMES, name: str) -> BaseLLM:
     return LLMManager.create_llm(
         llm_name=llm_name,
         llm_config=LLMConfig(
@@ -20,7 +20,7 @@ def create_llm(llm_name: LLMS, name: str) -> BaseLLM:
     )
 
 
-def run(llm_name: LLMS):
+def run(llm_name: LLM_NAMES):
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),
@@ -81,4 +81,4 @@ def run(llm_name: LLMS):
 
 if __name__ == "__main__":
     llm_name = sys.argv[1]
-    run(cast(LLMS, llm_name))
+    run(cast(LLM_NAMES, llm_name))

@@ -45,10 +45,13 @@ class HotelReservationsAssistant:
         make_reservation: MakeReservation,
         find_hotels: FindHotels,
         current_date=lambda: date.today(),
+        verbose=False,
     ):
         self.make_reservation = make_reservation
         self.find_hotels = find_hotels
         self.current_date = current_date
+        self.verbose = verbose
+
         self.chat_history: list[BaseMessage] = []
         self.agent = self.build_agent(llm)
 
@@ -63,7 +66,7 @@ class HotelReservationsAssistant:
         return AgentExecutor(
             agent=agent,
             tools=tools,
-            verbose=True,
+            verbose=self.verbose,
             return_intermediate_steps=True,
             handle_parsing_errors=True,
             max_iterations=5,

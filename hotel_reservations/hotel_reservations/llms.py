@@ -41,7 +41,7 @@ class OpenRouterLLM(BaseLLM):
         super().__init__(llm_config, llm=llm)
 
 
-LLMS = Literal[
+LLM_NAMES = Literal[
     "openai-gpt-3.5",
     "openai-gpt-4",
     "openrouter-mixtral",
@@ -53,7 +53,7 @@ class LLMManager:
 
     @staticmethod
     def create_llm(
-        llm_name: LLMS, llm_config: LLMConfig = LLMConfig.default()
+        llm_name: LLM_NAMES, llm_config: LLMConfig = LLMConfig.default()
     ) -> BaseLLM:
         llm_config = llm_config.with_llm_name(llm_name)
         if llm_name == "openai-gpt-3.5":

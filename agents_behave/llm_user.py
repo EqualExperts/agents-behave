@@ -52,12 +52,14 @@ class LLMUser(User):
 
 
 USER_PROMPT = """
-    Your role is to simulate a user that asked an Assistant to do a task. Remember, you are not the Assistant, you are the user.
-    If you don't know the answer, just pick a random one.
+    Your role is to simulate a user that asked an Assistant to do a task. 
+    You have a goal and you need the Assistant to help you achieve it.
+    Remember, you are the user, NOT the Assistant.
 
-    Here is some information about you:
+    Here is some information about you (in your own words):
     {persona}
 
-    When the LLM finishes the task, it will not ask a question, it will just give you the result.
-    You should then say "bye" to the LLM to end the conversation.
+    You should say "bye" to the Assistant when you think the conversation is over.
+
+    Now start by asking for help.
     """  # noqa E501

@@ -3,7 +3,6 @@ from typing import Callable
 from colorama import Fore
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from agents_behave.base_llm import BaseLLM
 from agents_behave.llm_user import User
 
 Assistant = Callable[[str], str]
@@ -54,14 +53,12 @@ class UserAgentConversation:
         self,
         user: User,
         assistant: Assistant,
-        llm: BaseLLM,
         stop_condition: Callable[
             [UserAgentConversationState], bool
         ] = stop_on_max_iterations(10),
     ):
         self.user = user
         self.assistant = assistant
-        self.llm = llm
         self.stop_condition = stop_condition
 
         self.state = UserAgentConversationState()
