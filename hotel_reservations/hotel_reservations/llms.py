@@ -16,7 +16,6 @@ class OpenAILLM(BaseLLM):
         llm = ChatOpenAI(
             model=llm_config.model or "",
             temperature=0.0,
-            model_kwargs={"seed": 42},
         )
 
         super().__init__(llm_config, llm)
@@ -38,7 +37,6 @@ class OpenRouterLLM(BaseLLM):
         llm = ChatOpenRouter(
             model=llm_config.model or "",
             temperature=0.0,
-            model_kwargs={"seed": 42},
         )
         super().__init__(llm_config, llm=llm)
 

@@ -31,6 +31,11 @@ def step_impl(context):  # noqa F811 # type: ignore
     context.hotels = hotels
 
 
+@behave.given("Today is {date}")
+def step_impl(context, date):  # noqa F811 # type: ignore
+    context.date = format_date(date)
+
+
 @behave.when(
     "I start a conversation that should end when the assistant says {stop_word}"
 )
@@ -63,7 +68,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
 
 @behave.then("The assistant should get the hotels in {location}")
 def step_impl(context, location):  # noqa F811 # type: ignore
-    context.find_hotels_mock.assert_called_once_with(location)
+    context.find_hotels_mock.assert_called_once_with("", location)
 
 
 @behave.then("A reservation should be made for the user with the following details")

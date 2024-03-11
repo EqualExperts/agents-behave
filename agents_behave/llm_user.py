@@ -34,32 +34,30 @@ class LLMUser(User):
         return chain
 
     def start(self):
-        return self.get_response()
+        response = self.get_response()
+        self.chat_history.append(AIMessage(content=response))
+        return response
 
     def chat(self, query: str):
         self.chat_history.append(HumanMessage(content=query))
-        return self.get_response()
+        response = self.get_response()
+        self.chat_history.append(AIMessage(content=response))
+        return response
 
     def get_response(self):
         response = self.agent.invoke(
             {"chat_history": self.chat_history},
         )
-        self.chat_history.append(AIMessage(content=response))
         return response
 
 
 USER_PROMPT = """
-    Your role is to simulate a user interacting with an LLM assistant.
-    Your persona defines how you will interact with the assistant and also the goals you want to achieve.
-    You should then say "bye" when you think the conversation is over.
-    You are not suppose to assist anyone, just to interact with the assistant.
-    Start by stating your goals or just say "hi" to start the conversation.
-    DO NOT start with something like "Hi! How can I assist you today?".
-    
-    Here is your persona (expressed in first person):
-    -------------
-    {persona}
-    -------------
+    Your role is to simulate a user that asked an Assistant to do a task. Remember, you are not the Assistant, you are the user.
+    If you don't know the answer, just pick a random one.
 
-    User:
+    Here is some information about you:
+    {persona}
+
+    When the LLM finishes the task, it will not ask a question, it will just give you the result.
+    You should then say "bye" to the LLM to end the conversation.
     """  # noqa E501

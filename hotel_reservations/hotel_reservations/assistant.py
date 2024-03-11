@@ -44,9 +44,11 @@ class HotelReservationsAssistant:
         llm: BaseLLM,
         make_reservation: MakeReservation,
         find_hotels: FindHotels,
+        current_date=lambda: date.today(),
     ):
         self.make_reservation = make_reservation
         self.find_hotels = find_hotels
+        self.current_date = current_date
         self.chat_history: list[BaseMessage] = []
         self.agent = self.build_agent(llm)
 
@@ -75,6 +77,9 @@ class HotelReservationsAssistant:
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ]
         )
+        prompt = prompt.partial(
+            current_date=self.current_date().strftime("%Y-%m-%d"),
+        )
 
         functions = [convert_to_openai_function(tool) for tool in tools]
         llm_with_tools = llm.bind(functions=functions)
@@ -97,9 +102,11 @@ class HotelReservationsAssistant:
                 MessagesPlaceholder(variable_name="chat_history"),
             ]
         )
+
         prompt = prompt.partial(
             tool_description_with_args=render_text_description_and_args(tools),
             tool_names=", ".join([t.name for t in tools]),
+            current_date=self.current_date().strftime("%Y-%m-%d"),
         )
 
         llm_with_stop = llm.bind(stop=["\nObservation"])
@@ -148,6 +155,8 @@ You are a helpful hotel reservations assistant.
 The name of the guest is mandatory to make the reservation, ensure you ask for it.
 You should present the user with the price per night before making the reservation.
 Ask the user for confirmation before making the reservation.
+
+Today is {current_date}.
 """
 
 SYSTEM_PROMPT_NO_FUNCTION_CALLING = """You are a helpful assistant that can make room reservations. 

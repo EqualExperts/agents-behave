@@ -36,7 +36,7 @@ def run(llm_name: LLMS):
         My name is Pedro Sousa. I don't like answering questions and I'm lazy, so I'll only answer one question at a time.
         My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 2 guests.
         I will not provide any information unless asked.
-    """
+    """  # noqa E501
     llm_user = LLMUser(
         llm=create_llm(llm_name=llm_name, name="LLMUser"),
         persona=persona,
