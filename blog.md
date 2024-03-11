@@ -8,7 +8,7 @@ In this article, we will demonstrate how to assess the performance of a conversa
 
 Additionally, we aim to illustrate the application of Behavior-Driven Development (BDD) in the testing process of conversational assistants. By incorporating BDD, we can create more structured and user-centric tests, enhancing the reliability and effectiveness of our conversational interfaces.
 
-You can find the complete code for this example in the [agents_behave](
+You can find the complete code for this example in the [agents_behave](https://github.com/EqualExperts/agents-behave).
 
 ## The Objective
 
