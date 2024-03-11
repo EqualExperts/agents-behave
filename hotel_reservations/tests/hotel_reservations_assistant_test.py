@@ -29,8 +29,8 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
 
 def test_book_a_room_with_a_budget():
     # Given
-    gpt_4_llm = create_llm("OpenAI", "openai-gpt-4")
-    mixtral_llm = create_llm("OpenRouter", "openrouter-mixtral")
+    gpt_4_llm = create_llm("GPT-4", "openai-gpt-4")
+    mixtral_llm = create_llm("Mixral", "openrouter-mixtral")
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
@@ -55,12 +55,12 @@ def test_book_a_room_with_a_budget():
     )
 
     # When
-    def assistant_chat(query: str):
+    def assistant_chat_wrapper(query: str):
         response = assistant.chat(query)
         return response["output"]
 
     conversation = UserAssistantConversation(
-        assistant=assistant_chat,
+        assistant=assistant_chat_wrapper,
         user=llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains("bye"),
     )

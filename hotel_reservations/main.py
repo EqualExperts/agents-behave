@@ -42,13 +42,13 @@ def run(llm_name: LLM_NAMES):
         persona=persona,
     )
 
-    def assistant_chat(query: str):
+    def assistant_chat_wrapper(query: str):
         response = assistant.chat(query)
         return response["output"]
 
     conversation = UserAssistantConversation(
         user=llm_user,
-        assistant=assistant_chat,
+        assistant=assistant_chat_wrapper,
         stop_condition=lambda state: "bye"
         in str(state.chat_history[-1].content).lower(),
     )

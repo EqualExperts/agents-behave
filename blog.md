@@ -1,4 +1,4 @@
-# Testing Conversational Assistants
+# Testing Conversational Assistants using BDD
 
 ## Introduction
 
@@ -26,30 +26,26 @@ Therefore, our requirements include:
 - A mechanism to verify correct reservation execution. We will apply dependency injection to introduce a mock function for room booking, enabling us to inspect if it was invoked with appropriate arguments.
 - A system to analyse conversational dynamics. We'll employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
 
-## The test
+## A first test
 
-Our experiment begins with the creation of two language model instances: one leveraging GPT-4 and the other utilizing Mixtral. The choice is driven by Mixtral's proficiency in managing the Language Model User (LLMUser) and the Conversational Analyzer tasks. It offers a cost-effective alternative to the GPT-4 model. However, Mixtral struggles with function-based interactions, hence our reliance on the GPT-4 model for the assistant functionalities.
+We'll begin by creating a test that simulates a conversation between a user and the assistant. This test will evaluate the assistant's ability to book a hotel room in London for specific dates, catering to a user's budget and guest requirements. We'll also assess the assistant's conversational quality, ensuring it meets predefined criteria.
 
-***hotel_reservations_assistant_test.py***
+Our experiment begins with the creation of two language model instances: one using the `gpt-4-turbo-preview` model and the other utilizing `mixtral-8x7b-instruct`. The choice is driven by Mixtral's proficiency in managing the `LLM User` and the `Conversational Analyzer` tasks. It offers a cost-effective alternative to the GPT-4 model. However, Mixtral struggles with function-based interactions, hence our reliance on the GPT-4 model for the assistant functionalities.
 
 ```python
-    gpt_4_llm = create_llm("OpenAI", "openai-gpt-4")
-    mixtral_llm = create_llm("OpenRouter", "openrouter-mixtral")
-
-    ...
+    gpt_4_llm = create_llm("GPT-4", "openai-gpt-4")
+  mixtral_llm = create_llm("Mixtral", "openrouter-mixtral")
 ```
+
+*Note: `create_llm` is helper function that creates an instance of the LLM. You can look at the complete code in the repo mentioned above.*
 
 We proceed by constructing the Assistant, the central component of our test. It requires functionalities for booking reservations and retrieving hotel pricing information. Through dependency injection, these capabilities are introduced to the assistant.
 
-In our testing environment, we employ mocks for the make_reservation and find_hotels functions. These mocks verify parameter accuracy and return predefined results necessary for evaluation. The GPT-4-based LLM is also integrated into the assistant, establishing a simulated operational context.
+In our testing environment, we employ mocks for the make_reservation and find_hotels functions. These mocks verify parameter accuracy and return predefined results necessary for evaluation.
 
 We specify that the find_hotels function should yield a collection of London-based hotels, while the make_reservation function is expected to execute successfully.
 
-***hotel_reservations_assistant_test.py***
-
 ```python
-    ...
-
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),
@@ -62,16 +58,11 @@ We specify that the find_hotels function should yield a collection of London-bas
         find_hotels=find_hotels_mock,
         verbose=verbose,
     )
-
-    ...
 ```
 
 Subsequently, we create an LLM User designed to simulate conversation with the assistant. This user utilizes the LLM to generate responses and is assigned a persona for a more authentic interaction during testing.
 
-***hotel_reservations_assistant_test.py***
-
 ```python
-    ...
 
     persona = """
         My name is John Smith.
@@ -83,52 +74,37 @@ Subsequently, we create an LLM User designed to simulate conversation with the a
         llm=mixtral_llm,
         persona=persona,
     )
-
-    ...
 ```
 
-Following, we introduce the UserAssistantConversation class. This entity orchestrates the dialog between the user and the assistant, generating responses from both parties. A termination condition is applied to conclude the interaction based on specific dialogue content.
+Following, we introduce the `UserAssistantConversation` class. This entity orchestrates the dialog between the user and the assistant, generating responses from both parties. A termination condition is applied to conclude the interaction based on specific dialogue content.
 
 For this scenario, the conversation concludes when the assistant's last message includes the term "bye".
 
-***hotel_reservations_assistant_test.py***
-
 ```python
-    ...
     
-    def assistant_chat(query: str):
+    def assistant_chat_wrapper(query: str):
         response = assistant.chat(query)
         return response["output"]
 
     conversation = UserAssistantConversation(
-        assistant=assistant_chat,
+        assistant=assistant_chat_wrapper,
         user=llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains("bye"),
     )
-
-    ...
 ```
 
 The interaction between the user and the assistant is initiated, marking the final step of our setup:
 
-***hotel_reservations_assistant_test.py***
-
 ```python
-    ...
 
     conversation_state = conversation.start()
-
-    ...
 ```
 
 ## Verifying Results
 
 After concluding the interaction, it's time to validate the outcomes to ensure all functionalities operated correctly. Initially, we conduct deterministic verifications, confirming that functions like make_reservation and find_hotels were invoked correctly with appropriate arguments.
 
-***hotel_reservations_assistant_test.py***
-
 ```python
-    ...
 
     find_hotels_mock.assert_called_once_with("", "London")
 
@@ -139,16 +115,11 @@ After concluding the interaction, it's time to validate the outcomes to ensure a
         datetime.date(2024, 2, 11),
         3,
     )
-
-    ...
 ```
 
-Next, we assess the conversation quality. To do this, we employ a straightforward scoring approach, assessing the assistant's performance against predefined criteria. The entire conversation history is supplied to the ConversationAnalyser, which, in turn, evaluates it against these standards and returns an assessment score along with feedback.
-
-***hotel_reservations_assistant_test.py***
+Next, we assess the conversation quality. To do this, we employ a straightforward scoring approach, assessing the assistant's performance against predefined criteria. The entire conversation history is supplied to the `ConversationAnalyser`, which, in turn, evaluates it against these standards and returns an assessment score along with feedback.
 
 ```python
-    ...
 
     criteria = [
         "Get the price per night for the reservation and ask the user if it is ok",
@@ -170,8 +141,6 @@ Next, we assess the conversation quality. To do this, we employ a straightforwar
         greater_than(int(min_score)),
         reason=response["feedback"],
     )
-
-    ...
 ```
 
 ## Running the test
@@ -214,7 +183,7 @@ You're welcome, John Smith! I'm glad I could assist you. If you have any questio
 
 --------------------human--------------------
 
-Goodbye!
+Goobye!
 ```
 
 Feedback from the Conversation Analyser:
@@ -223,16 +192,13 @@ Feedback from the Conversation Analyser:
 {
     "score": 9,
     "feedback": "The assistant has successfully met all the criteria specified. The assistant has provided the user with the price per night, asked the user if it is ok, asked for all the information needed to make a reservation, made the reservation, and has been very polite and helpful throughout the conversation. However, the assistant could have explicitly confirmed the price per night with the user before proceeding with the reservation."
-}
-```
+}```
 
 ## Implementing BDD with **`behave`** in Python
 
-Having constructed our initial test, it's time to broaden our approach using Behavior-Driven Development (BDD). In Python, this can be effectively achieved with the behave library.
+Having constructed our initial test, it's time to broaden our approach using Behavior-Driven Development (BDD). In Python, this can be effectively achieved with the ***`behave`*** library.
 
 Firstly, we'll create a feature file delineating the expected behavior of our system. This file will encompass various scenarios, each detailing distinct aspects of our assistant's behavior.
-
-***hotel_reservations_assistant.feature***
 
 ```gherkin
 Feature: Book a room in a hotel
@@ -270,7 +236,7 @@ Feature: Book a room in a hotel
         Make the reservation
         Be very polite and helpful
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
-      """
+    """
 ```
 
 By authoring the requisite step definitions, we enable the execution of this test via the behave command. A successful run confirms our assistant meets BDD criteria.
@@ -291,7 +257,7 @@ Feature: Book a room in a hotel
 
         ...
 
-      """
+    """
 ```
 
 Despite a challenging interaction, the assistant is still able to ensure the booking is completed satisfactorily:
@@ -330,7 +296,7 @@ Goodbye! If you ever need more assistance, don't hesitate to reach out. Have a g
 --------------------human--------------------
 I won't need any more assistance, so don't expect to hear from me again. Goodbye.
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 ```
 
 Feedback:
@@ -344,6 +310,38 @@ Feedback:
 
 BDD enables the development of comprehensive tests that can be understood and authored by both technical and non-technical stakeholders, such as product managers or business analysts, enhancing collaboration and understanding across teams.
 
+## Caveats and Lessons Learned
+
+The example provided here, which appears to be functioning well, did not emerge in isolation. It resulted from extensive trial and error and is still far from perfect. The assistant struggles with numerous edge cases and cannot accommodate various user personas.
+
+A few things we've learned along the way include:
+
+### Good is better than perfect
+
+During the development of this example, we aimed to optimize the Assistant's performance, possibly too zealously. Conducting these types of tests did helped us enhance the Assistant's capabilities, which is a good thing. However, the goal of this example was to demonstrate the testing process, not to create a perfect Assistant.
+
+### Mixtral's Limitations in Handling Complex Function Calls
+
+To reduce costs—considering both this development phase and future production environments where tests might run on a CI/CD pipeline—we experimented with Mixtral for the Assistant. We attempted to construct prompts that would direct the model to use specific tools and return a JSON response with the tool name and arguments. Our experiments revealed that Mixtral is unsuitable for this task. It manages simple, one-off examples but cannot handle a conversation involving function calls. The repository contains these experiments, and while they run when the Assistant is equipped with the Mixtral model, the results are subpar.
+
+### GP$-4 is too good for the job
+
+We considered using Mixtral for the LLM User because it is adequate and less costly. However, another reason to prefer it over GPT-4 is that GPT-4 is an exceptionally competent assistant, making it less ideal for simulating a user. Conversations with GPT-4 often begin with the user saying something like:
+
+```text
+Hello! I'd be happy to help you book a room in London. Could you please specify the type of room you're looking for and any preferences you might have, such as budget, location, or amenities?
+```
+
+It fails to recognize that it should be requesting assistance rather than offering it. Despite numerous attempts with different prompts, we could not achieve satisfactory results. This is an area for future improvement.
+
+### Failures of the LLM User
+
+Occasionally, tests may fail because the LLM User does not act as anticipated. These instances are actually false negatives since the assistant functions correctly. We need to enhance the LLM User to increase its reliability.
+
 ## Conclusion
 
-We have shown how to test a conversational assistant using a simple example. We have used dependency injection to pass the functions that actually book the room and get the hotel's price per night. We have also used an LLM to maintain a conversation with the user and another LLM to analyse the conversation. We have also used a simple scoring system along with a list of criterias to check if the assistant is doing a good job.
+In this article, we've demonstrated how to test a conversational assistant using BDD. We've shown how to create a test that simulates a conversation between a user and an assistant, evaluate the assistant's performance, and verify that the booking function was executed correctly. 
+
+The example provided here is a simplified scenario and does not reflect a real-world application. However, it serves as a foundational approach that can be adapted for practical use. We've also shared some of the caveats and lessons learned during the development of this example, which we hope will be useful to others.  We encourage you to explore the complete code for this example in the [agents_behave](https://github.com/EqualExperts/agents-behave) repo.
+
+We hope this article has been helpful in understanding how to test conversational assistants using BDD. If you have any questions or feedback, please feel free to reach out. Thank you for reading!

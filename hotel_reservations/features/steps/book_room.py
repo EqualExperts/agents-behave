@@ -53,12 +53,12 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
     context.make_reservation_mock = make_reservation_mock
     context.find_hotels_mock = find_hotels_mock
 
-    def assistant_chat(query: str):
+    def assistant_chat_wrapper(query: str):
         response = assistant.chat(query)
         return response["output"]
 
     context.conversation = UserAssistantConversation(
-        assistant=assistant_chat,
+        assistant=assistant_chat_wrapper,
         user=context.llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains(stop_word),
     )
