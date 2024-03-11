@@ -1,5 +1,7 @@
 # Testing Conversational Assistants using BDD
 
+Optimizing Chatbot Performance: A Comprehensive Guide to Behavior-Driven Development Testing | From Theory to Practice: Enhancing Conversational Assistants for Superior User Engagement
+
 ## Introduction
 
 The popularity of conversation assistants is on the rise, as they are being integrated into various applications ranging from customer support to personal assistant services. However, a crucial question arises: How can we evaluate their performance? How do we determine if they're meeting their intended objectives effectively?
@@ -8,7 +10,7 @@ In this article, we will demonstrate how to assess the performance of a conversa
 
 Additionally, we aim to illustrate the application of Behavior-Driven Development (BDD) in the testing process of conversational assistants. By incorporating BDD, we can create more structured and user-centric tests, enhancing the reliability and effectiveness of our conversational interfaces.
 
-You can find the complete code for this example in the [agents_behave](https://github.com/EqualExperts/agents-behave).
+You can find the complete code for this example in the [agents_behave](https://github.com/EqualExperts/agents-behave) repo.
 
 ## The Objective
 
@@ -37,7 +39,7 @@ Our experiment begins with the creation of two language model instances: one usi
   mixtral_llm = create_llm("Mixtral", "openrouter-mixtral")
 ```
 
-*Note: `create_llm` is helper function that creates an instance of the LLM. You can look at the complete code in the repo mentioned above.*
+*Note: `create_llm` is a helper function that creates an instance of an LLM. You can look at the complete code in the repo mentioned above.*
 
 We proceed by constructing the Assistant, the central component of our test. It requires functionalities for booking reservations and retrieving hotel pricing information. Through dependency injection, these capabilities are introduced to the assistant.
 
@@ -243,7 +245,6 @@ By authoring the requisite step definitions, we enable the execution of this tes
 
 Further explorations can include scenarios featuring less cooperative users:
 
-***hotel_reservations_assistant.feature***
 
 ```gherkin
 Feature: Book a room in a hotel
@@ -312,13 +313,13 @@ BDD enables the development of comprehensive tests that can be understood and au
 
 ## Caveats and Lessons Learned
 
-The example provided here, which appears to be functioning well, did not emerge in isolation. It resulted from extensive trial and error and is still far from perfect. The assistant struggles with numerous edge cases and cannot accommodate various user personas.
+The example provided here, which appears to be functioning well, did not emerge in isolation. It resulted from extensive trial and error and is still far from perfect. The assistant still struggles with numerous edge cases.
 
 A few things we've learned along the way include:
 
 ### Good is better than perfect
 
-During the development of this example, we aimed to optimize the Assistant's performance, possibly too zealously. Conducting these types of tests did helped us enhance the Assistant's capabilities, which is a good thing. However, the goal of this example was to demonstrate the testing process, not to create a perfect Assistant.
+During the development of this example, we aimed to optimize the Assistant's performance, possibly too zealously. Conducting these types of tests did helped us enhance the Assistant's capabilities, which is a good thing. However, the goal of this example was to demonstrate the testing process, not to create a perfect Assistant. Lesson learned.
 
 ### Mixtral's Limitations in Handling Complex Function Calls
 
