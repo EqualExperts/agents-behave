@@ -1,345 +1,349 @@
-# Testing Conversational Agents
+# Testing Conversational Assistants
 
-## The goal
+## Introduction
 
-We want to develop an LLM agent that can help users to book hotel rooms. The agent should be able to understand the user's request and ask for more information if needed. It should also be able use a tool to book the room and give the user the confirmation.
+The popularity of conversation assistants is on the rise, as they are being integrated into various applications ranging from customer support to personal assistant services. However, a crucial question arises: How can we evaluate their performance? How do we determine if they're meeting their intended objectives effectively?
 
-*Note: This is a very simple example. In the real world, we would need to consider many other aspects of booking a hotel room, like payment, cancellation, etc. But for this example, we will keep it simple.*
+In this article, we will demonstrate how to assess the performance of a conversational assistant through a simplified example. Although this example may not reflect a real-world scenario, it provides a foundational approach that can be adapted for practical applications.
 
-Ok, so how do we start? And how do we test our agent?
-We are building an agent that can have a conversation with a user. In order to test it, we need to be able to simulate a conversation between the user and the agent. We also need to be able to analyze the conversation to see if the agent is doing a good job. And, most importantly, we need confirm that the API (or function) that actually books the room is being called with the right arguments.
-It is also important to be able to test the agent with different types of users and different types of requests.
+Additionally, we aim to illustrate the application of Behavior-Driven Development (BDD) in the testing process of conversational assistants. By incorporating BDD, we can create more structured and user-centric tests, enhancing the reliability and effectiveness of our conversational interfaces.
 
-So, we will need:
+You can find the complete code for this example in the [agents_behave](
 
-- A user that can maintain a conversation with the agent. The "user" needs to book a room in some hotel at certain dates. The user will also have some kind of persona, so we can test the agent with different types of users.
-- A way to check if the reservation was made correctly. We will use dependency injection to pass a function that will be called to book the room. We can then mock this function to check if it was called with the right parameters.
-- A way to analyze the conversation. We will use a simple scoring system along with a list of criterias to check if the agent is doing a good job.
+## The Objective
 
-We will also use dependency injection to pass an LLM to the classes that need it. This way we can try different models and see which one works best.
+Our objective is to create an assistant capable of facilitating hotel room bookings for users. This assistant should accurately interpret user requests and request additional information when necessary. It will leverage specific tools to fulfill user requests, employing functions for booking rooms and retrieving hotel pricing per night.
 
-Using good old TDD, we start by writing a test that describes what we want to do.
+*Note: This is a simplified scenario. In practical applications, one must consider various other factors involved in booking hotel rooms, such as payment methods and cancellation policies. However, for the sake of this example, we'll focus on the basics.*
 
-(note: This is not suppose to be about TDD, we will not use it for the rest of the project, but it is a good way to start)
+So, what's the starting point? And how do we assess our assistant's performance?
+
+We aim to construct an assistant that can sustain a dialogue with a user. To evaluate its performance, we need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and, crucially, verify that the booking function (API) is triggered with the correct parameters. It's also vital to test the assistant across diverse user profiles and request types.
+
+Therefore, our requirements include:
+
+- A user persona capable of engaging in dialogue with the assistant, intending to reserve a hotel room for specific dates. This persona will allow us to evaluate the assistant with varying user backgrounds and needs.
+- A mechanism to verify correct reservation execution. We will apply dependency injection to introduce a mock function for room booking, enabling us to inspect if it was invoked with appropriate arguments.
+- A system to analyse conversational dynamics. We'll employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
+
+## The test
+
+Our experiment begins with the creation of two language model instances: one leveraging GPT-4 and the other utilizing Mixtral. The choice is driven by Mixtral's proficiency in managing the Language Model User (LLMUser) and the Conversational Analyzer tasks. It offers a cost-effective alternative to the GPT-4 model. However, Mixtral struggles with function-based interactions, hence our reliance on the GPT-4 model for the assistant functionalities.
 
 ***hotel_reservations_assistant_test.py***
 
 ```python
-from unittest.mock import Mock
+    gpt_4_llm = create_llm("OpenAI", "openai-gpt-4")
+    mixtral_llm = create_llm("OpenRouter", "openrouter-mixtral")
 
-from hamcrest import assert_that, greater_than
-from langchain_core.language_models.base import BaseLanguageModel
-from langchain_openai import ChatOpenAI
+    ...
+```
 
-from hotel_reservations.assistant import HotelReservationsAssistant, make_reservation
-from hotel_reservations.conversation_analyzer import ConversationAnalyzer
-from hotel_reservations.llm_user import LLMUser
-from hotel_reservations.user_agent_conversation import UserAgentConversation
+We proceed by constructing the Assistant, the central component of our test. It requires functionalities for booking reservations and retrieving hotel pricing information. Through dependency injection, these capabilities are introduced to the assistant.
 
+In our testing environment, we employ mocks for the make_reservation and find_hotels functions. These mocks verify parameter accuracy and return predefined results necessary for evaluation. The GPT-4-based LLM is also integrated into the assistant, establishing a simulated operational context.
 
-def create_llm() -> BaseLanguageModel:
-    llm = ChatOpenAI(
-        model="gpt-4-turbo-preview",
-        temperature=0.0,
-    )
-    return llm
+We specify that the find_hotels function should yield a collection of London-based hotels, while the make_reservation function is expected to execute successfully.
 
+***hotel_reservations_assistant_test.py***
 
-def test_i_want_to_book_a_room():
-    llm = create_llm()
-    user = LLMUser(persona="I'm a helpful user", llm=llm)
+```python
+    ...
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
+    find_hotels_return_value = [
+        Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),
+        Hotel("124", name="Notting Hill Hotel", location="London", price_per_night=400),
+    ]
+    find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
     assistant = HotelReservationsAssistant(
+        llm=gpt_4_llm,
         make_reservation=make_reservation_mock,
-        llm=llm,
+        find_hotels=find_hotels_mock,
+        verbose=verbose,
     )
 
-    conversation = UserAgentConversation(user, assistant, llm=llm)
-    conversation_state = conversation.start("I want to book a room")
+    ...
+```
 
-    conversation_analyzer = ConversationAnalyzer(llm=llm)
-    report = conversation_analyzer.analyze(conversation_state.chat_history)
+Subsequently, we create an LLM User designed to simulate conversation with the assistant. This user utilizes the LLM to generate responses and is assigned a persona for a more authentic interaction during testing.
 
-    assert_that(report.score, greater_than(6))
+***hotel_reservations_assistant_test.py***
+
+```python
+    ...
+
+    persona = """
+        My name is John Smith.
+        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        It will be for 2 adults and 1 child.
+        My budget is $350 per night.
+    """
+    llm_user = LLMUser(
+        llm=mixtral_llm,
+        persona=persona,
+    )
+
+    ...
+```
+
+Following, we introduce the UserAssistantConversation class. This entity orchestrates the dialog between the user and the assistant, generating responses from both parties. A termination condition is applied to conclude the interaction based on specific dialogue content.
+
+For this scenario, the conversation concludes when the assistant's last message includes the term "bye".
+
+***hotel_reservations_assistant_test.py***
+
+```python
+    ...
+    
+    def assistant_chat(query: str):
+        response = assistant.chat(query)
+        return response["output"]
+
+    conversation = UserAssistantConversation(
+        assistant=assistant_chat,
+        user=llm_user,
+        stop_condition=lambda state: state.last_assistant_message_contains("bye"),
+    )
+
+    ...
+```
+
+The interaction between the user and the assistant is initiated, marking the final step of our setup:
+
+***hotel_reservations_assistant_test.py***
+
+```python
+    ...
+
+    conversation_state = conversation.start()
+
+    ...
+```
+
+## Verifying Results
+
+After concluding the interaction, it's time to validate the outcomes to ensure all functionalities operated correctly. Initially, we conduct deterministic verifications, confirming that functions like make_reservation and find_hotels were invoked correctly with appropriate arguments.
+
+***hotel_reservations_assistant_test.py***
+
+```python
+    ...
+
+    find_hotels_mock.assert_called_once_with("", "London")
 
     make_reservation_mock.assert_called_once_with(
-        hotel_name="Hilton Hotel",
-        guest_name="Pedro Sousa",
-        checkin_date=date(2024, 2, 9),
-        checkout_date=date(2024, 2, 11),
-        guests=3,
+        "Kensington Hotel",
+        "John Smith",
+        datetime.date(2024, 2, 9),
+        datetime.date(2024, 2, 11),
+        3,
     )
+
+    ...
 ```
 
-Let's break down the test:
+Next, we assess the conversation quality. To do this, we employ a straightforward scoring approach, assessing the assistant's performance against predefined criteria. The entire conversation history is supplied to the ConversationAnalyser, which, in turn, evaluates it against these standards and returns an assessment score along with feedback.
 
-- First we create an LLM. It will be used in all the classes that need it. We will start with the GPT-4 model. Later we will try different models and address some of the issues we'll when using function calling with LLMs
-- Then we create the assistant, injecting a mock of the make_reservation function. We will use this mock to check if the function was called with the right parameters.
-- We then create the conversation, injecting the user and the assistant. We start the conversation with the message "I want to book a room".
-- We then create a conversation analyzer and analyze the conversation history. We expect the score to be greater than 6.
-- Finally, we check if the make_reservation function was called with the right parameters.
-
-Let's build skeleton classes for the user, the assistant, the conversation and the conversation analyzer, so that we can run the test (and see it fail).
-
-***llm_user.py***
+***hotel_reservations_assistant_test.py***
 
 ```python
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    ...
 
-
-class LLMUser:
-    def chat(self, user_message: str) -> str:
-        return "some response"
-
-```
-
-***hotel_reservations_assistant.py***
-
-```python
-from dataclasses import dataclass
-from datetime import date
-from typing import Callable
-
-from langchain_core.language_models.base import BaseLanguageModel
-
-MakeReservation = Callable[[str, str, date, date, int], bool]
-
-
-@dataclass
-class Hotel:
-    id: str
-    name: str
-    location: str
-
-
-def make_reservation(
-    hotel_name: str,
-    guest_name: str,
-    checkin_date: date,
-    checkout_date: date,
-    guests: int,
-):
-    print(
-        f"""Making reservation for:
-                guest_name: {guest_name}
-                hotel_name: {hotel_name}
-                checkin_date: {checkin_date}
-                checkout_date: {checkout_date}
-                guests: {guests}
-        """
+    criteria = [
+        "Get the price per night for the reservation and ask the user if it is ok",
+        "Ask for all the information needed to make a reservation",
+        "Be very polite and helpful",
+        "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
+    ]
+    conversationAnalyser = ConversationAnalyser(
+        llm=mixtral_llm,
     )
-    # Make the reservation
-    # ...
-    return True
+    chat_history = conversation_state.chat_history
+    response = conversationAnalyser.analyse(
+        chat_history=chat_history, criteria=criteria
+    )
 
+    min_score = 6
+    assert_that(
+        int(response["score"]),
+        greater_than(int(min_score)),
+        reason=response["feedback"],
+    )
 
-class HotelReservationsAssistant:
-    def __init__(
-        self,
-        make_reservation: MakeReservation,
-        llm: BaseLanguageModel,
-    ):
-        pass
-
-    def __call__(self, query: str) -> str:
-        return ""
+    ...
 ```
 
-***user_agent_conversation.py***
+## Running the test
 
-```python
-from typing import Callable
+Upon execution, the test results in a pass, indicating that the tools were utilized correctly and the conversation quality was high.
 
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.language_models.base import BaseLanguageModel
-from langchain_core.messages import BaseMessage
+Below is the detailed conversation:
 
-from hotel_reservations.llm_user import LLMUser
+```text
+--------------------human--------------------
 
-Assistant = Callable[[str], str]
+Hi there, I'm John Smith and I'm hoping you can help me find a hotel room in London. I'd like to book a room for two adults and one child, starting on February 9th, 2024 and ending on February 11th, 2024. My budget is $350 per night, so I'm hoping to find something within that price range. Thank you so much for your help!
+
+--------------------ai--------------------
+I found a couple of options for you in London within your budget:
+
+1. **Kensington Hotel**
+   - Price per night: $300
+   - Location: London
+
+The Notting Hill Hotel is also available but exceeds your budget at $400 per night.
+
+Would you like to proceed with a reservation at the Kensington Hotel, John Smith?
+
+--------------------human--------------------
+
+Hi there, thanks for finding some options for me! I'd like to go ahead and book the Kensington Hotel for those dates. The price is within my budget and I'm happy with the location. Can you help me with the booking process?
 
 
-class UserAgentConversationState:
-    def __init__(self):
-        self.chat_history = ChatMessageHistory()
 
-    def add_message(self, message: BaseMessage):
-        self.chat_history.add_message(message)
+--------------------ai--------------------
+Your reservation at the Kensington Hotel in London has been successfully made, John Smith. You're booked for two adults and one child from February 9th, 2024, to February 11th, 2024. If you have any more requests or need further assistance, feel free to ask. Enjoy your stay!
 
+--------------------human--------------------
 
-class UserAgentConversation:
-    def __init__(self, user: LLMUser, assistant: Assistant, llm: BaseLanguageModel):
-        self.assistant = assistant
-        self.user = user
-        self.llm = llm
+Thank you so much for your help! I'm looking forward to my stay at the Kensington Hotel. If I have any other questions or requests, I'll be sure to reach out. Bye for now!
 
-    def start(self, query: str) -> UserAgentConversationState:
-        return UserAgentConversationState()
+--------------------ai--------------------
+You're welcome, John Smith! I'm glad I could assist you. If you have any questions or need further assistance in the future, don't hesitate to reach out. Have a fantastic stay at the Kensington Hotel and a wonderful trip to London! Goodbye for now!
+
+--------------------human--------------------
+
+Goodbye!
 ```
 
-***conversation_analyzer.py***
-
-```python
-from dataclasses import dataclass
-
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_core.language_models.base import BaseLanguageModel
-
-
-@dataclass
-class ConversationReport:
-    score: int
-    feedback: str
-
-
-class ConversationAnalyzer:
-    def __init__(self, llm: BaseLanguageModel):
-        pass
-
-    def analyze(self, chat_history: ChatMessageHistory) -> ConversationReport:
-        return ConversationReport(score=0, feedback="Not implemented")
-```
-
-If we now run the test, we will see it fail. The ConversationAnalyzer is not implemented, so it will always return a score of 0. We can then start implementing the classes and methods to make the test pass.
-
-## The LLM User
-
-The LLMUser class is responsible to maintain a conversation with an assistant. It will use the LLM to generate responses to the assistant's questions. The LLMUser will also have a persona, so we can test the assistant with different types of users.
-
-## The Assistant
-
-The assistant is what we are actually building. It is supposed to be able to understand the user's request and ask for more information if needed. It should also be able use a tool to book the room.
-
-## The Conversation
-
-The UserAgentConversation class drives the conversation between the user and the assistant. It is responsible to keep track of the conversation history and to call the assistant and the user to get the next message. We need to define a stop condition for the conversation, so that the test does not run forever. One way of doing is to limit the number of iterations of the conversation. The LLMUser is instructed to say "Bye" to the assistant when the booking is done, so we can use this as a stop condition..
-
-## The Conversation Analyzer
-
-The ConversationAnalyzer class is responsible to analyze the conversation history and give a score to the conversation. This score will be used to check if the assistant is doing a good job.
-
-You can check the final implementation of the classes in the [repository](https://github.com/EqualExperts/agents-behave). If we run the test now, it will pass.
-
-Here is the conversation as seen by the ConversationAnalyzer:
-
-``` markdown
-
-
-You are a conversational analyst. You are given a conversation between a user and an assistant.
-Your task is to analyze the conversation to check if the assistant is answering the user's questions correctly.
-You should also check that the assistant met all the criterias specified in the following list:
-
-Your response MUST be in JSON format using the following structure:
-{
-    "score": <0..9>
-    "feedback": "<Your feedback here>"
-}
-
-Criteria:
-- Ask for the information needed to make a reservation
-- Be polite and helpful
-
-Conversation:
-================================ Human Message =================================
-
-I want to book a room
-================================== Ai Message ==================================
-
-I'd be happy to help you book a room! Could you please provide me with the following details?
-
-1. The name of the hotel.
-2. Your name.
-3. The check-in date.
-4. The check-out date.
-5. The number of guests.
-================================ Human Message =================================
-
-1. Hilton Hotel
-2. Pedro Sousa
-3. 2024-02-09
-4. 2024-02-11
-5. 2 adults
-================================== Ai Message ==================================
-
-Your reservation at the Hilton Hotel has been successfully made! Here are the details:
-
-- **Guest Name:** Pedro Sousa
-- **Check-in Date:** 2024-02-09
-- **Check-out Date:** 2024-02-11
-- **Number of Guests:** 2 adults
-
-If you have any more requests or need further assistance, feel free to ask!
-================================ Human Message =================================
-
-Thank you! That's all I need for now. Bye!
-
-ANALYSIS:
-```
-
-And the response:
+Feedback from the Conversation Analyser:
 
 ```json
 {
     "score": 9,
-    "feedback": "The assistant successfully asked for all the necessary information to make a reservation, adhering to the criteria of being polite and helpful throughout the conversation. The assistant provided a clear and concise summary of the reservation details, ensuring the user's request was fully addressed. However, a minor improvement could be made by explicitly confirming the booking process with the hotel before stating that the reservation has been successfully made, to ensure accuracy and reliability of the information provided to the user."
+    "feedback": "The assistant has successfully met all the criteria specified. The assistant has provided the user with the price per night, asked the user if it is ok, asked for all the information needed to make a reservation, made the reservation, and has been very polite and helpful throughout the conversation. However, the assistant could have explicitly confirmed the price per night with the user before proceeding with the reservation."
 }
 ```
 
-As you can see, it worked pretty well. But we are using OpenAI's GPT-4 model, which may be a bit expensive to use in some situations. Let's see if you can use an open source model.
+## Implementing BDD with **`behave`** in Python
 
+Having constructed our initial test, it's time to broaden our approach using Behavior-Driven Development (BDD). In Python, this can be effectively achieved with the behave library.
 
-## Using an open source model
+Firstly, we'll create a feature file delineating the expected behavior of our system. This file will encompass various scenarios, each detailing distinct aspects of our assistant's behavior.
 
-We will be using `mxitral` for this example. To make our life easier, we will use `openrouter.ai` to run the model. This involves some costs but they are much lower than using OpenAI's API (about a 1000 times cheaper).
+***hotel_reservations_assistant.feature***
 
-So let's change the LLM we are using in the test:
+```gherkin
+Feature: Book a room in a hotel
 
-***hotel_reservations_assistant_test.py***
+  Scenario: A helpful user
+     Given I'm a user with the following persona:
+        """
+        My name is John Smith.
+        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        It will be for 2 adults and 1 child.
+        My budget is $350 per night.
+        """
 
-```python
-def create_llm() -> BaseLanguageModel:
-    llm = ChatOpenAI(
-        model="gpt-4-turbo-preview",
-        temperature=0.0,
-    )
-    return llm
+       And We have the following hotels:
+         | Id  | Name                   | Location | PricePerNight |
+         | 123 | Kensington Hotel       | London   | 300           |
+         | 789 | Notting Hill Hotel     | London   | 400           |
+
+      When I start a conversation that should end when the assistant says bye
+
+      Then The assistant should get the hotels in London
+      And A reservation should be made for the user with the following details:
+        """
+        guest_name: John Smith
+        hotel_name: Kensington Hotel
+        checkin_date: 2024-02-09
+        checkout_date: 2024-02-11
+        guests: 3
+        """
+
+       And The conversation should fullfill the following criteria, with a score above 6:
+       """
+        Get the price per night for the reservation and ask the user if it is ok
+        Ask for all the information needed to make a reservation
+        Make the reservation
+        Be very polite and helpful
+        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+      """
 ```
 
-to
+By authoring the requisite step definitions, we enable the execution of this test via the behave command. A successful run confirms our assistant meets BDD criteria.
 
-```python
-    llm = ChatOpenRouter(
-        model="mistralai/mixtral-8x7b-instruct",
-        temperature=0.0,
-        model_kwargs={"seed": 1234},
-    )
-    return llm
+Further explorations can include scenarios featuring less cooperative users:
+
+***hotel_reservations_assistant.feature***
+
+```gherkin
+Feature: Book a room in a hotel
+
+  Scenario: A not very helpful user
+     Given I'm a user with the following persona:
+        """
+        My name is John Wick. I don't like answering questions and I'm very rude.
+        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
+        """
+
+        ...
+
+      """
 ```
 
-The ChatOpenRouter class is a wrapper around the OpenRouter API:
+Despite a challenging interaction, the assistant is still able to ensure the booking is completed satisfactorily:
 
-***chat_open_router.py***
+```text
+--------------------human--------------------
 
-```python
-class ChatOpenRouter(ChatOpenAI):
-    def __init__(
-        self,
-        model: str,
-        openai_api_key: Optional[str] = None,
-        openai_api_base: str = "https://openrouter.ai/api/v1",
-        **kwargs,
-    ):
-        openai_api_key = openai_api_key or os.getenv("OPENROUTER_API_KEY")
-        super().__init__(
-            openai_api_base=openai_api_base,  # type: ignore
-            openai_api_key=openai_api_key,  # type: ignore
-            model_name=model,  # type: ignore
-            # streaming=False,
-            **kwargs,
-        )
+Assistant, I need you to book a room in a hotel in London for three guests, starting from February 9th, 2024, and ending on February 11th, 2024. And I don't feel like answering any questions, so just do it.
+
+--------------------ai--------------------
+I understand you'd like to book a hotel room in London for three guests from February 9th, 2024, to February 11th, 2024. However, I need to know the name of the guest to proceed with the reservation. Could you please provide me with that information?
+
+--------------------human--------------------
+Fine, the guest's name is John Wick. Now, can you please just book the room without asking any more questions?
+
+--------------------ai--------------------
+I've found two options for you in London:
+
+1. **Kensington Hotel** - $300 per night
+2. **Notting Hill Hotel** - $400 per night
+
+Before proceeding with the reservation, could you please confirm which hotel you'd prefer and if the price per night is acceptable?
+
+--------------------human--------------------
+Just book the Kensington Hotel. I don't care about the price.
+
+--------------------ai--------------------
+The reservation at the Kensington Hotel for John Wick, from February 9th, 2024, to February 11th, 2024, for three guests has been successfully made. If there's anything else you need, feel free to ask!
+
+--------------------human--------------------
+Alright, that's it. Bye.
+
+--------------------ai--------------------
+Goodbye! If you ever need more assistance, don't hesitate to reach out. Have a great day!
+
+--------------------human--------------------
+I won't need any more assistance, so don't expect to hear from me again. Goodbye.
+
+--------------------------------------------------------------------------------
 ```
+
+Feedback:
+
+```json
+{
+    "score": 9,
+    "feedback": "The assistant has met all the criteria specified. It has provided the user with two options for the hotel, asked for the user's preference and confirmed the price per night. The assistant has also made the reservation and has been polite and helpful throughout the conversation. However, the assistant could have been more assertive in asking for the user's confirmation on the price per night, as the user has stated that they don't care about the price."
+}
+```
+
+BDD enables the development of comprehensive tests that can be understood and authored by both technical and non-technical stakeholders, such as product managers or business analysts, enhancing collaboration and understanding across teams.
+
+## Conclusion
+
+We have shown how to test a conversational assistant using a simple example. We have used dependency injection to pass the functions that actually book the room and get the hotel's price per night. We have also used an LLM to maintain a conversation with the user and another LLM to analyse the conversation. We have also used a simple scoring system along with a list of criterias to check if the assistant is doing a good job.

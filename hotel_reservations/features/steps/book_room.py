@@ -4,9 +4,9 @@ from unittest.mock import Mock
 import behave
 from hamcrest import assert_that, greater_than
 
-from agents_behave.conversation_analyzer import ConversationAnalyzer
+from agents_behave.conversation_analyser import ConversationAnalyser
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_agent_conversation import UserAgentConversation
+from agents_behave.user_agent_conversation import UserAssistantConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 
@@ -57,7 +57,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
         response = assistant.chat(query)
         return response["output"]
 
-    context.conversation = UserAgentConversation(
+    context.conversation = UserAssistantConversation(
         assistant=assistant_chat,
         user=context.llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains(stop_word),
@@ -95,9 +95,11 @@ def step_impl(context):  # noqa F811 # type: ignore
 def step_impl(context, score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyzer(llm=context.openrouter_llm)
+    conversationAnalyzer = ConversationAnalyser(llm=context.openrouter_llm)
     chat_history = context.conversation_state.chat_history
-    response = conversationAnalyzer.invoke(chat_history=chat_history, criteria=criteria)
+    response = conversationAnalyzer.analyse(
+        chat_history=chat_history, criteria=criteria
+    )
     assert_that(
         int(response["score"]),
         greater_than(int(score)),

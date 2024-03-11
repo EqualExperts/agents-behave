@@ -59,4 +59,5 @@ USER_PROMPT = """
     {persona}
 
     You should say "bye" to the Assistant when you think the conversation is over.
+    Now start by asking the Assistant for help.
     """  # noqa E501

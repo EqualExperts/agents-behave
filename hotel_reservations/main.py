@@ -2,9 +2,9 @@ import sys
 from typing import cast
 from unittest.mock import Mock
 
-from agents_behave.conversation_analyzer import ConversationAnalyzer
+from agents_behave.conversation_analyser import ConversationAnalyser
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_agent_conversation import UserAgentConversation
+from agents_behave.user_agent_conversation import UserAssistantConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMConfig, LLMManager
@@ -33,8 +33,8 @@ def run(llm_name: LLM_NAMES):
         find_hotels=find_hotels_mock,
     )
     persona = """
-        My name is Pedro Sousa. I don't like answering questions and I'm lazy, so I'll only answer one question at a time.
-        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 2 guests.
+        My name is John Smith. I don't like answering questions and I'm not very polite.
+        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
         I will not provide any information unless asked.
     """  # noqa E501
     llm_user = LLMUser(
@@ -46,10 +46,9 @@ def run(llm_name: LLM_NAMES):
         response = assistant.chat(query)
         return response["output"]
 
-    conversation = UserAgentConversation(
+    conversation = UserAssistantConversation(
         user=llm_user,
         assistant=assistant_chat,
-        llm=create_llm(llm_name=llm_name, name="LLMUser"),
         stop_condition=lambda state: "bye"
         in str(state.chat_history[-1].content).lower(),
     )
@@ -64,7 +63,7 @@ def run(llm_name: LLM_NAMES):
         "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
     ]
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyzer(
+    conversationAnalyser = ConversationAnalyser(
         llm=create_llm(llm_name, "ConversationAnalyzer")
     )
     chat_history = conversation_state.chat_history
@@ -74,7 +73,9 @@ def run(llm_name: LLM_NAMES):
         print(f"{message.type}:\n{message.content}")
     print("-" * 100)
 
-    response = conversationAnalyzer.invoke(chat_history=chat_history, criteria=criteria)
+    response = conversationAnalyser.analyse(
+        chat_history=chat_history, criteria=criteria
+    )
 
     print(response)
 

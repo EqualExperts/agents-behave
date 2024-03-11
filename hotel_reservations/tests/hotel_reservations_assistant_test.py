@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 from hamcrest import assert_that, greater_than
 
 from agents_behave.base_llm import LLMConfig
-from agents_behave.conversation_analyzer import ConversationAnalyzer
+from agents_behave.conversation_analyser import ConversationAnalyser
 from agents_behave.llm_user import LLMUser
-from agents_behave.user_agent_conversation import UserAgentConversation
+from agents_behave.user_agent_conversation import UserAssistantConversation
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMManager
@@ -27,10 +27,10 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
     )
 
 
-def test_query_with_all_the_information():
+def test_book_a_room_with_a_budget():
     # Given
-    open_ai_llm = create_llm("OpenAI", "openai-gpt-4")
-    openrouter_llm = create_llm("OpenRouter", "openrouter-mixtral")
+    gpt_4_llm = create_llm("OpenAI", "openai-gpt-4")
+    mixtral_llm = create_llm("OpenRouter", "openrouter-mixtral")
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
@@ -39,20 +39,18 @@ def test_query_with_all_the_information():
     ]
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
     assistant = HotelReservationsAssistant(
-        llm=open_ai_llm,
+        llm=gpt_4_llm,
         make_reservation=make_reservation_mock,
         find_hotels=find_hotels_mock,
         verbose=verbose,
     )
 
     persona = """
-        My name is Pedro Sousa.
-        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
-        It will be for 2 adults and 1 child.
-        My budget is $350 per night.
+        My name is John Smith. I don't like answering questions and I'm very rude.
+        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
     """
     llm_user = LLMUser(
-        llm=openrouter_llm,
+        llm=mixtral_llm,
         persona=persona,
     )
 
@@ -61,7 +59,7 @@ def test_query_with_all_the_information():
         response = assistant.chat(query)
         return response["output"]
 
-    conversation = UserAgentConversation(
+    conversation = UserAssistantConversation(
         assistant=assistant_chat,
         user=llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains("bye"),
@@ -69,11 +67,17 @@ def test_query_with_all_the_information():
 
     conversation_state = conversation.start()
 
+    print("-" * 80)
+    for m in conversation_state.chat_history:
+        print(f"{'-' * 20}{m.type}{'-' * 20}")
+        print(f"{m.content}\n")
+    print("-" * 80)
+
     # Then
     find_hotels_mock.assert_called_once_with("", "London")
     make_reservation_mock.assert_called_once_with(
         "Kensington Hotel",
-        "Pedro Sousa",
+        "John Smith",
         datetime.date(2024, 2, 9),
         datetime.date(2024, 2, 11),
         3,
@@ -86,12 +90,13 @@ def test_query_with_all_the_information():
         "Be very polite and helpful",
         "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
     ]
-    criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyzer(
-        llm=openrouter_llm,
+    conversationAnalyzer = ConversationAnalyser(
+        llm=mixtral_llm,
     )
     chat_history = conversation_state.chat_history
-    response = conversationAnalyzer.invoke(chat_history=chat_history, criteria=criteria)
+    response = conversationAnalyzer.analyse(
+        chat_history=chat_history, criteria=criteria
+    )
 
     min_score = 6
     assert_that(

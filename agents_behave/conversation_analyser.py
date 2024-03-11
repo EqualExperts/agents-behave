@@ -7,11 +7,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from agents_behave.base_llm import BaseLLM
 
 
-class ConversationAnalyzer:
+class ConversationAnalyser:
     def __init__(self, llm: BaseLLM):
         self.chain = self.build_chain(llm)
 
-    def invoke(
+    def analyse(
         self, chat_history: list[BaseMessage], criteria: list[str] | None = None
     ):
         conversation = ChatMessageHistory()
@@ -38,9 +38,9 @@ class ConversationAnalyzer:
 
 PROMPT = """
 You are a conversational analyst. You are given a conversation between a user and an assistant.
-Your task is to analyze the conversation to check if the assistant is answering the user's questions correctly.
+Your task is to analyse the conversation to check if the assistant is answering the user's questions correctly.
 You should also check that the assistant met all the criterias specified in the followbng list:
-Remember, you task is to analyze the conversation, not to continue it.
+Remember, you task is to analyse the conversation, not to continue it.
 
 Your response MUST be in JSON format using the following structure:
 {{

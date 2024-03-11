@@ -9,13 +9,13 @@ Assistant = Callable[[str], str]
 
 
 def stop_on_max_iterations(max_iterations: int):
-    def stop_on_max_iterations_fn(state: UserAgentConversationState) -> bool:
+    def stop_on_max_iterations_fn(state: UserAssistantConversationState) -> bool:
         return state.iterations_count >= max_iterations
 
     return stop_on_max_iterations_fn
 
 
-class UserAgentConversationState:
+class UserAssistantConversationState:
     def __init__(self):
         self.chat_history: list[BaseMessage] = []
         self.iterations_count = 0
@@ -48,24 +48,24 @@ class UserAgentConversationState:
         )
 
 
-class UserAgentConversation:
+class UserAssistantConversation:
     def __init__(
         self,
         user: User,
         assistant: Assistant,
         stop_condition: Callable[
-            [UserAgentConversationState], bool
+            [UserAssistantConversationState], bool
         ] = stop_on_max_iterations(10),
     ):
         self.user = user
         self.assistant = assistant
         self.stop_condition = stop_condition
 
-        self.state = UserAgentConversationState()
+        self.state = UserAssistantConversationState()
 
-    def start(self) -> UserAgentConversationState:
+    def start(self) -> UserAssistantConversationState:
         user_message = self.user.start()
-        self.state = UserAgentConversationState()
+        self.state = UserAssistantConversationState()
         self.state.add_message(HumanMessage(content=user_message))
         user_response = user_message
         while not self.stop_condition(self.state):

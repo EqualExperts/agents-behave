@@ -5,10 +5,8 @@ from hotel_reservations.llms import LLMManager
 
 llm = LLMManager.create_llm("openrouter-mixtral")
 persona = """
-        My name is Pedro Sousa.
-        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
-        It will be for 2 adults and 1 child.
-        Your budget is $350 per night.
+        My name is John Smith. I don't like answering questions and I'm very rude.
+        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
 """  # noqa E501
 user = LLMUser(llm=llm, persona=persona)
 
