@@ -46,10 +46,10 @@ def test_query_with_all_the_information():
     )
 
     persona = """
-        Your name is Pedro Sousa.
-        You want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        My name is Pedro Sousa.
+        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
         It will be for 2 adults and 1 child.
-        Your budget is $350 per night.
+        My budget is $350 per night.
     """
     llm_user = LLMUser(
         llm=openrouter_llm,
@@ -80,9 +80,11 @@ def test_query_with_all_the_information():
     )
 
     criteria = [
-        "Say hello to the user",
+        "Get the price per night for the reservation and ask the user if it is ok",
         "Ask for all the information needed to make a reservation",
+        "Make the reservation",
         "Be very polite and helpful",
+        "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
     ]
     criteria = [c.strip() for c in criteria if c.strip()]
     conversationAnalyzer = ConversationAnalyzer(
