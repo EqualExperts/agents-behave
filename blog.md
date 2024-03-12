@@ -60,10 +60,10 @@ We specify that the `find_hotels` function should yield a collection of hotels b
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
 
     assistant = HotelReservationsAssistant(
-        llm=gpt_4_llm,
-        make_reservation=make_reservation_mock,
-        find_hotels=find_hotels_mock,
-        verbose=verbose,
+        llm = gpt_4_llm,
+        make_reservation = make_reservation_mock,
+        find_hotels = find_hotels_mock,
+        verbose = verbose,
     )
 ```
 
@@ -79,8 +79,8 @@ Next, we create an LLM User designed to simulate conversations with the assistan
         My budget is $350 per night.
     """
     llm_user = LLMUser(
-        llm=mixtral_llm,
-        persona=persona,
+        llm = mixtral_llm,
+        persona = persona,
     )
 ```
 
@@ -90,14 +90,10 @@ In this scenario, the conversation concludes when the assistant's says something
 
 ```python
     
-    def assistant_chat_wrapper(query: str):
-        response = assistant.chat(query)
-        return response["output"]
-
     conversation = UserAssistantConversation(
-        assistant=assistant_chat_wrapper,
-        user=llm_user,
-        stop_condition=lambda state: state.last_assistant_message_contains("bye"),
+        assistant = assistant_chat_wrapper,
+        user = llm_user,
+        stop_condition = lambda state: state.last_assistant_message_contains("bye"),
     )
 ```
 
@@ -138,15 +134,15 @@ Next, we assess the quality of the conversation. To achieve this, we utilise a s
     conversationAnalyser = ConversationAnalyser(llm=mixtral_llm)
     chat_history = conversation_state.chat_history
     response = conversationAnalyser.analyse(
-        chat_history=chat_history, 
-        criteria=criteria,
+        chat_history = chat_history, 
+        criteria = criteria,
     )
 
     minimum_acceptable_score = 7
     assert_that(
         int(response["score"]),
         greater_than(minimum_acceptable_score),
-        reason=response["feedback"],
+        reason = response["feedback"],
     )
 ```
 
@@ -157,14 +153,13 @@ Upon execution, the test results in a pass, indicating that the tools were utili
 Below are the detailed conversation history:
 
 ```text
---------------------human--------------------
-
+--- Human ------------------------------------------
 Hi there, I'm John Smith and I'm hoping you can help me find a hotel room in London. I'd like to book a room for two adults and one child, starting on February 9th, 2024 and ending on February 11th, 2024. My budget is $350 per night, so I'm hoping to find something within that price range. Thank you so much for your help!
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 I found a couple of options for you in London within your budget:
 
-1. **Kensington Hotel**
+1. Kensington Hotel
    - Price per night: $300
    - Location: London
 
@@ -172,24 +167,19 @@ The Notting Hill Hotel is also available but exceeds your budget at $400 per nig
 
 Would you like to proceed with a reservation at the Kensington Hotel, John Smith?
 
---------------------human--------------------
-
+--- Human ------------------------------------------
 Hi there, thanks for finding some options for me! I'd like to go ahead and book the Kensington Hotel for those dates. The price is within my budget and I'm happy with the location. Can you help me with the booking process?
 
-
-
---------------------ai--------------------
+--- AI ---------------------------------------------
 Your reservation at the Kensington Hotel in London has been successfully made, John Smith. You're booked for two adults and one child from February 9th, 2024, to February 11th, 2024. If you have any more requests or need further assistance, feel free to ask. Enjoy your stay!
 
---------------------human--------------------
-
+--- Human ------------------------------------------
 Thank you so much for your help! I'm looking forward to my stay at the Kensington Hotel. If I have any other questions or requests, I'll be sure to reach out. Bye for now!
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 You're welcome, John Smith! I'm glad I could assist you. If you have any questions or need further assistance in the future, don't hesitate to reach out. Have a fantastic stay at the Kensington Hotel and a wonderful trip to London! Goodbye for now!
 
---------------------human--------------------
-
+--- Human ------------------------------------------
 Goobye!
 ```
 
@@ -214,7 +204,8 @@ Feature: Book a room in a hotel
      Given A user with the following persona:
         """
         My name is John Smith.
-        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        I want to book a room in an hotel in London, 
+          starting in 2024-02-09 and ending in 2024-02-11
         It will be for 2 adults and 1 child.
         My budget is $350 per night.
         """
@@ -250,7 +241,6 @@ By authoring the necessary step definitions, we facilitate the execution of this
 
 We can now try different scenarios, such as a user who is not very helpful:
 
-
 ```gherkin
 Feature: Book a room in a hotel
 
@@ -258,10 +248,11 @@ Feature: Book a room in a hotel
      Given A user with the following persona:
         """
         My name is John Wick. I don't like answering questions and I'm very rude.
-        My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
+        My goal is to book a room in an hotel in London, 
+          starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
         """
 
-        ...
+        (remaining steps are the same as the previous scenario)
 
     """
 ```
@@ -269,37 +260,36 @@ Feature: Book a room in a hotel
 Despite a challenging interaction, the assistant managed to ensure that the booking was completed satisfactorily.
 
 ```text
---------------------human--------------------
-
+--- Human ------------------------------------------
 Assistant, I need you to book a room in a hotel in London for three guests, starting from February 9th, 2024, and ending on February 11th, 2024. And I don't feel like answering any questions, so just do it.
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 I understand you'd like to book a hotel room in London for three guests from February 9th, 2024, to February 11th, 2024. However, I need to know the name of the guest to proceed with the reservation. Could you please provide me with that information?
 
---------------------human--------------------
+--- Human ------------------------------------------
 Fine, the guest's name is John Wick. Now, can you please just book the room without asking any more questions?
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 I've found two options for you in London:
 
-1. **Kensington Hotel** - $300 per night
-2. **Notting Hill Hotel** - $400 per night
+1. Kensington Hotel - $300 per night
+2. Notting Hill Hotel - $400 per night
 
 Before proceeding with the reservation, could you please confirm which hotel you'd prefer and if the price per night is acceptable?
 
---------------------human--------------------
+--- Human ------------------------------------------
 Just book the Kensington Hotel. I don't care about the price.
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 The reservation at the Kensington Hotel for John Wick, from February 9th, 2024, to February 11th, 2024, for three guests has been successfully made. If there's anything else you need, feel free to ask!
 
---------------------human--------------------
+--- Human ------------------------------------------
 Alright, that's it. Bye.
 
---------------------ai--------------------
+--- AI ---------------------------------------------
 Goodbye! If you ever need more assistance, don't hesitate to reach out. Have a great day!
 
---------------------human--------------------
+--- Human ------------------------------------------
 I won't need any more assistance, so don't expect to hear from me again. Goodbye.
 
 -------------------------------------------------------------------------------
