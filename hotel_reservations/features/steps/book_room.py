@@ -15,7 +15,7 @@ def format_date(date: str):
     return datetime.strptime(date, "%Y-%m-%d").date()
 
 
-@behave.given("I'm a user with the following persona")
+@behave.given("A user with the following persona")
 def step_impl(context):  # noqa F811 # type: ignore
     context.llm_user = LLMUser(
         llm=context.openrouter_llm,
@@ -39,7 +39,7 @@ def step_impl(context, date):  # noqa F811 # type: ignore
 
 
 @behave.when(
-    "I start a conversation that should end when the assistant says {stop_word}"
+    "The user starts a conversation that should end when the assistant says {stop_word}"
 )
 def step_impl(context, stop_word):  # noqa F811 # type: ignore
     make_reservation_mock = Mock(make_reservation, return_value=True)
@@ -68,7 +68,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
 
 @behave.then("The assistant should get the hotels in {location}")
 def step_impl(context, location):  # noqa F811 # type: ignore
-    context.find_hotels_mock.assert_called_once_with("", location)
+    context.find_hotels_mock.assert_called_once_with(location)
 
 
 @behave.then("A reservation should be made for the user with the following details")
@@ -90,9 +90,9 @@ def step_impl(context):  # noqa F811 # type: ignore
 
 
 @behave.then(
-    "The conversation should fullfill the following criteria, with a score above {score}"
+    "The conversation should fullfill the following criteria, with a score above {minimum_acceptable_score}"
 )
-def step_impl(context, score):  # noqa F811 # type: ignore
+def step_impl(context, minimum_acceptable_score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
     conversationAnalyzer = ConversationAnalyser(llm=context.openrouter_llm)
@@ -102,6 +102,6 @@ def step_impl(context, score):  # noqa F811 # type: ignore
     )
     assert_that(
         int(response["score"]),
-        greater_than(int(score)),
+        greater_than(int(minimum_acceptable_score)),
         reason=response["feedback"],
     )

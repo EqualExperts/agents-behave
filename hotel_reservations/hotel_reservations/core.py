@@ -22,7 +22,7 @@ class Hotel:
 
 
 MakeReservation = Callable[[str, str, date, date, int], bool]
-FindHotels = Callable[[str, str], list[Hotel]]
+FindHotels = Callable[[str], list[Hotel]]
 
 
 hotels = [
@@ -34,11 +34,9 @@ hotels = [
 ]
 
 
-def find_hotels(name: str = "", location: str = "") -> list[Hotel]:
-    logger.info(f"Finding hotels with name {name} and location {location}")
-    return [
-        hotel for hotel in hotels if name in hotel.name and location in hotel.location
-    ]
+def find_hotels(location: str) -> list[Hotel]:
+    logger.info(f"Finding hotels in location {location}")
+    return [hotel for hotel in hotels if location in hotel.location]
 
 
 def make_reservation(

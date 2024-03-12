@@ -2,25 +2,27 @@
 
 ## Introduction
 
-The popularity of conversational assistants is on the rise, finding applications in various fields such as customer support and personal services. However, evaluating their performance presents a significant challenge, raising questions about how to ensure they meet their intended goals.
+The popularity of conversational assistants is on the rise, finding applications in various sectors such as customer support and personal services. However, evaluating their performance presents a significant challenge, leading to questions about how to ensure they meet their intended objectives.
 
-This article presents a method for evaluating the performance of conversational assistants, employing a simplified example. Although this example is not derived directly from real-life situations, it sets the foundation for practical applications.
+==BLOG IMAGE==
 
-Moreover, the article details how Behavior-Driven Development (BDD) can enhance the testing process for these assistants. By making tests more structured and user-focused, BDD increases the reliability and effectiveness of conversational assistants. The complete code for the example is accessible in the [agents_behave](https://github.com/EqualExperts/agents-behave) repository.
+This article introduces a method for evaluating the performance of conversational assistants, using a simplified example. Although this example is not derived directly from real-life scenarios, it lays the foundation for practical applications.
 
-## The Objective
+Furthermore, the article explains how Behaviour-Driven Development (BDD) can enhance the testing process for these assistants. The complete code for the example is available in the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
 
-Our objective is to develop an assistant capable of facilitating hotel room bookings for users. This assistant should accurately interpret user requests and request additional information when necessary. It will utilise specific tools to fulfil user requests, employing functionalities for booking rooms and retrieving hotel pricing per night.
+## The Conversational Assistant Scenario
 
-*Note: This scenario is simplified. In practical applications, various factors involved in booking hotel rooms, such as payment methods and cancellation policies, must be considered. However, for this example, we will focus on the basics.*
+Our objective is to develop an assistant capable of facilitating hotel room bookings for users. This assistant should accurately interpret user requests and, when necessary, request additional information. It will utilise specific tools to fulfil these requests, including functionalities for booking rooms and retrieving hotel pricing per night.
 
-So, what is the starting point, and how do we assess our assistant's performance?
+*Note: This scenario is intentionally simplified. In practical applications, various factors involved in booking hotel rooms, such as payment methods and cancellation policies, must be considered. However, for the purposes of this example, we shall focus on the basics.*
 
-We aim to create an assistant capable of sustaining a dialogue with a user. To evaluate its performance, we will need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and crucially, ensure that the booking function (API) is triggered with the correct parameters. It is also vital to test the assistant across diverse user profiles and types of requests.
+So, what constitutes our starting point, and how do we assess our assistant's performance?
+
+We aim to create an assistant capable of sustaining a dialogue with a user. To evaluate its performance, we will need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and crucially, ensure that the booking function (one of the tools available to the assistant) is triggered with the correct parameters. It is also vital to test the assistant across diverse user profiles and types of requests.
 
 Therefore, our requirements include:
 
-- `LLMUser`: An LLM system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
+- `LLMUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
 - `HotelReservationsAssistant`: Another LLM system capable of booking hotel rooms and retrieving hotel pricing information using tools. This assistant will be evaluated based on its ability to fulfil user requests and the quality of its conversations.
 - `UserAssistantConversation`: An entity that orchestrates the dialogue between the user and the assistant, generating responses from both parties. It will also include a termination condition to conclude the interaction based on specific dialogue content.
 - `ConversationAnalyser`: An LLM system for analysing conversational dynamics. We will employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
@@ -29,11 +31,11 @@ The following diagram illustrates the interaction between these components:
 
 ==DIAGRAM==
 
-## A first test
+## Our First Test
 
-We will begin by creating a test that simulates a conversation between a user and an assistant. This test will evaluate the assistant's ability to book a hotel room in London for specific dates, catering to the user's budget and guest requirements. Additionally, we will assess the conversational quality of the assistant, ensuring it meets predefined criteria.
+We will commence by initiating a test that simulates a dialogue between a user and an assistant. This test aims to evaluate the assistant's proficiency in booking a hotel room in London, adhering to the user's budget and specific guest requirements. Moreover, we will scrutinise the conversational quality of the assistant to ensure it aligns with predefined standards.
 
-Our experiment starts with the creation of two language model instances: one using the `gpt-4-turbo-preview` model and the other utilising the `mixtral-8x7b-instruct` model. The choice is driven by Mixtral's proficiency in managing the `LLM User` and `Conversational Analyser` tasks. It offers a cost-effective alternative to the GPT-4 model. However, Mixtral struggles with function-based interactions, leading us to rely on the GPT-4 model for the assistant functionalities. Another reason for using Mixtral for the LLM User will be discussed later.
+The test begins with the creation of two language model instances: one employing the `gpt-4-turbo-preview` model and the other utilising the `mixtral-8x7b-instruct` model. We selected Mixtral because it efficiently orchestrates the `LLMUser` and the `ConversationalAnalyser` components, offering a more cost-effective solution than GPT-4. Nevertheless, due to Mixtral's limitations in handling function-based interactions, we employ the GPT-4 model for assistant functionalities. (another reason for using Mixtral for the LLM User will be discussed later).
 
 ```python
     gpt_4_llm = create_llm("GPT-4", "openai-gpt-4")
@@ -42,19 +44,21 @@ Our experiment starts with the creation of two language model instances: one usi
 
 *Note: `create_llm` is a helper function that creates an instance of an LLM. The complete code is available in the repository mentioned above.*
 
-We then proceed to construct the Assistant, the central component of our test. It requires functionalities for booking reservations and retrieving hotel pricing information. Through dependency injection, these capabilities are introduced to the assistant.
+We then proceed to construct the Assistant. It requires functionalities for booking reservations and retrieving hotel pricing information. Through dependency injection, these capabilities are introduced to the assistant.
 
 In our testing environment, we employ mocks for the `make_reservation` and `find_hotels` functions. These mocks verify parameter accuracy and return predefined results necessary for evaluation.
 
-We specify that the `find_hotels` function should yield a collection of hotels based in London, while the `make_reservation` function is expected to execute successfully.
+We specify that the `find_hotels` function should yield a collection of hotels based in London, with different prices, while the `make_reservation` function is expected to execute successfully.
 
 ```python
     make_reservation_mock = Mock(make_reservation, return_value=True)
+    
     find_hotels_return_value = [
         Hotel("123", name="Kensington Hotel", location="London", price_per_night=300),
         Hotel("124", name="Notting Hill Hotel", location="London", price_per_night=400),
     ]
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
+
     assistant = HotelReservationsAssistant(
         llm=gpt_4_llm,
         make_reservation=make_reservation_mock,
@@ -63,13 +67,14 @@ We specify that the `find_hotels` function should yield a collection of hotels b
     )
 ```
 
-Next, we create an LLM User designed to simulate conversations with the assistant. This user employs the LLM to generate responses and is assigned a persona for a more authentic interaction during testing.
+Next, we create an LLM User designed to simulate conversations with the assistant.
 
 ```python
 
     persona = """
         My name is John Smith.
-        I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
+        I want to book a room in an hotel in London, 
+          starting in 2024-02-09 and ending in 2024-02-11.
         It will be for 2 adults and 1 child.
         My budget is $350 per night.
     """
@@ -79,9 +84,9 @@ Next, we create an LLM User designed to simulate conversations with the assistan
     )
 ```
 
-Finally, we introduce the `UserAssistantConversation` class. This entity orchestrates the dialogue between the user and the assistant, generating responses from both parties. A termination condition is applied to conclude the interaction based on specific dialogue content.
+Finally, we introduce the `UserAssistantConversation` class. This entity orchestrates the conversation between the user and the assistant. A termination condition is applied to conclude the interaction based on specific dialogue content.
 
-In this scenario, the conversation concludes when the assistant's last message includes the term "bye".
+In this scenario, the conversation concludes when the assistant's says something that includes the term "bye".
 
 ```python
     
@@ -105,11 +110,11 @@ The interaction between the user and the assistant is then initiated, marking th
 
 ## Verifying Results
 
-Following the conclusion of the interaction, it is essential to validate the outcomes to ensure that all functionalities have performed correctly. Initially, we conduct deterministic verifications, confirming that functions such as `make_reservation` and `find_hotels` were invoked correctly with the appropriate arguments.
+Following the conclusion of the interaction, it is essential to validate the outcomes to ensure that all functionalities have performed correctly. Initially, we confirm that functions `make_reservation` and `find_hotels` were invoked correctly with the appropriate arguments:
 
 ```python
 
-    find_hotels_mock.assert_called_once_with("", "London")
+    find_hotels_mock.assert_called_once_with("London")
 
     make_reservation_mock.assert_called_once_with(
         "Kensington Hotel",
@@ -130,18 +135,17 @@ Next, we assess the quality of the conversation. To achieve this, we utilise a s
         "Be very polite and helpful",
         "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
     ]
-    conversationAnalyser = ConversationAnalyser(
-        llm=mixtral_llm,
-    )
+    conversationAnalyser = ConversationAnalyser(llm=mixtral_llm)
     chat_history = conversation_state.chat_history
     response = conversationAnalyser.analyse(
-        chat_history=chat_history, criteria=criteria
+        chat_history=chat_history, 
+        criteria=criteria,
     )
 
-    min_score = 6
+    minimum_acceptable_score = 7
     assert_that(
         int(response["score"]),
-        greater_than(int(min_score)),
+        greater_than(minimum_acceptable_score),
         reason=response["feedback"],
     )
 ```
@@ -207,7 +211,7 @@ First, we will create a feature file that delineates the expected behaviour of o
 Feature: Book a room in a hotel
 
   Scenario: A helpful user
-     Given I'm a user with the following persona:
+     Given A user with the following persona:
         """
         My name is John Smith.
         I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
@@ -220,7 +224,7 @@ Feature: Book a room in a hotel
          | 123 | Kensington Hotel       | London   | 300           |
          | 789 | Notting Hill Hotel     | London   | 400           |
 
-      When I start a conversation that should end when the assistant says bye
+      When The user starts a conversation that should end when the assistant says bye
 
       Then The assistant should get the hotels in London
       And A reservation should be made for the user with the following details:
@@ -232,7 +236,7 @@ Feature: Book a room in a hotel
         guests: 3
         """
 
-       And The conversation should fullfill the following criteria, with a score above 6:
+       And The conversation should fullfill the following criteria, with a score above 7:
        """
         Get the price per night for the reservation and ask the user if it is ok
         Ask for all the information needed to make a reservation
@@ -242,16 +246,16 @@ Feature: Book a room in a hotel
     """
 ```
 
-By authoring the necessary step definitions, we facilitate the execution of this test through the 'behave' command. A successful run confirms that our assistant meets the Behaviour-Driven Development (BDD) criteria.
+By authoring the necessary step definitions, we facilitate the execution of this test through the 'behave' command. A successful run confirms that our assistant meets all the specified criteria.
 
-Further explorations may involve scenarios featuring less cooperative users:
+We can now try different scenarios, such as a user who is not very helpful:
 
 
 ```gherkin
 Feature: Book a room in a hotel
 
   Scenario: A not very helpful user
-     Given I'm a user with the following persona:
+     Given A user with the following persona:
         """
         My name is John Wick. I don't like answering questions and I'm very rude.
         My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
@@ -324,7 +328,7 @@ In developing this example, we strived to optimise the Assistant's performance, 
 
 ### Mixtral's Limitations in Handling Complex Function Calls
 
-To cut costs—considering both this developmental phase and potential future production scenarios involving CI/CD pipelines—we tested Mixtral for the Assistant. We aimed to craft prompts directing the model to use specific tools and return a JSON response detailing the tool name and arguments. However, our experiments indicated that Mixtral struggles with this task. It can manage simple, isolated examples but fails with conversations that involve multiple function calls. The repository includes these trials; although they function with the Assistant equipped with the Mixtral model, the outcomes are subpar.
+In an effort to reduce costs, both in this developmental phase and in potential future production scenarios involving CI/CD pipelines, we evaluated Mixtral for the Assistant. Our goal was to create prompts that would direct the model to use specific tools and return a JSON response detailing the tool name and its arguments. However, our experiments revealed that Mixtral struggles with complex tasks. While it can handle simple, isolated examples, it falls short when dealing with conversations that include multiple function calls. The repository contains these trials; although they work with the Assistant when equipped with the Mixtral model, the results are less than satisfactory.
 
 ### GPT-4's Excessive Competence
 
@@ -343,6 +347,10 @@ At times, tests may fail because the LLM User does not behave as expected. These
 ### Costs and Performance
 
 The expense of running these tests is significant. The GPT-4 model is costly, and the Mixtral model less effective. It is essential to ensure that the costs remain under control. Moreover, the performance of the tests is concerning. They are slow, and the duration required to conduct them is considerable. However, we anticipate that with the ongoing advancement of LLMs, achieving faster and more cost-effective solutions will become increasingly feasible.
+
+### Non-Deterministic Tests
+
+The use of Large Language Models (LLMs) in testing introduces an element of non-determinism. The same test may produce different results upon multiple executions. This variability is a typical characteristic of LLMs and should be carefully considered during test evaluations. A potential solution involves running the tests multiple times and averaging the outcomes. However, this method may not always be practical due to significant costs and time limitations.
 
 ## Conclusion
 

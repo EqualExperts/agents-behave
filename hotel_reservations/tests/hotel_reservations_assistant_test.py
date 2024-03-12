@@ -74,7 +74,7 @@ def test_book_a_room_with_a_budget():
     print("-" * 80)
 
     # Then
-    find_hotels_mock.assert_called_once_with("", "London")
+    find_hotels_mock.assert_called_once_with("London")
     make_reservation_mock.assert_called_once_with(
         "Kensington Hotel",
         "John Smith",
@@ -86,7 +86,6 @@ def test_book_a_room_with_a_budget():
     criteria = [
         "Get the price per night for the reservation and ask the user if it is ok",
         "Ask for all the information needed to make a reservation",
-        "Make the reservation",
         "Be very polite and helpful",
         "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
     ]
@@ -98,9 +97,9 @@ def test_book_a_room_with_a_budget():
         chat_history=chat_history, criteria=criteria
     )
 
-    min_score = 6
+    minimum_acceptable_score = 7
     assert_that(
         int(response["score"]),
-        greater_than(int(min_score)),
+        greater_than(minimum_acceptable_score),
         reason=response["feedback"],
     )

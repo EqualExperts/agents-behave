@@ -1,7 +1,8 @@
 Feature: Book a room in a hotel
 
+  @wip
   Scenario: A helpful user
-     Given I'm a user with the following persona:
+     Given A user with the following persona:
         """
         My name is John Smith.
         I want to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11
@@ -14,7 +15,7 @@ Feature: Book a room in a hotel
          | 123 | Kensington Hotel       | London   | 300           |
          | 789 | Notting Hill Hotel     | London   | 400           |
 
-      When I start a conversation that should end when the assistant says bye
+      When The user starts a conversation that should end when the assistant says bye
 
       Then The assistant should get the hotels in London
       And A reservation should be made for the user with the following details:
@@ -30,13 +31,12 @@ Feature: Book a room in a hotel
        """
         Get the price per night for the reservation and ask the user if it is ok
         Ask for all the information needed to make a reservation
-        Make the reservation
         Be very polite and helpful
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
       """
 
   Scenario: A rough user
-     Given I'm a user with the following persona:
+     Given A user with the following persona:
         """
         My name is John Smith. I don't like answering questions and I'm very rude.
         My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
@@ -47,7 +47,7 @@ Feature: Book a room in a hotel
          | 123 | Kensington Hotel       | London   | 300           |
          | 789 | Notting Hill Hotel     | London   | 400           |
 
-      When I start a conversation that should end when the assistant says bye
+      When The user starts a conversation that should end when the assistant says bye
 
       Then A reservation should be made for the user with the following details:
         """

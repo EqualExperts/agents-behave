@@ -145,9 +145,9 @@ class HotelReservationsAssistant:
             )
 
         @tool(args_schema=FindHotelsInput)
-        def find_hotels_tool(name: str = "", location: str = ""):
+        def find_hotels_tool(location: str):
             """Useful to find hotels by name and/or location."""
-            return self.find_hotels(name, location)
+            return self.find_hotels(location)
 
         tools: list = [make_reservation_tool, find_hotels_tool]
         return tools
