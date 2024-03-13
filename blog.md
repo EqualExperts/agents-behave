@@ -180,7 +180,7 @@ Thank you so much for your help! I'm looking forward to my stay at the Kensingto
 You're welcome, John Smith! I'm glad I could assist you. If you have any questions or need further assistance in the future, don't hesitate to reach out. Have a fantastic stay at the Kensington Hotel and a wonderful trip to London! Goodbye for now!
 
 --- Human ------------------------------------------
-Goobye!
+Goodbye!
 ```
 
 Feedback from the Conversation Analyser:
@@ -306,7 +306,7 @@ Feedback:
 
 BDD facilitates the creation of comprehensive tests that are accessible to both technical and non-technical stakeholders, including product managers and business analysts. This approach enhances collaboration and understanding across teams.
 
-## Caveats and Lessons Learned
+## Caveats and Lessons Learnt
 
 The example provided here, which seems to function well, did not develop in isolation. It emerged from extensive trials and errors and remains imperfect. The assistant continues to face challenges with numerous edge cases.
 
@@ -316,7 +316,7 @@ A few insights we've gained include:
 
 In developing this example, we strived to optimise the Assistant's performance, perhaps overly ambitiously. These tests helped enhance the Assistant's capabilities, which is beneficial. However, the primary aim was to showcase the testing process, not to craft a flawless Assistant. Lesson learnt.
 
-### Mixtral's Limitations in Handling Complex Function Calls
+### Mixtral's Limitations
 
 In an effort to reduce costs, both in this developmental phase and in potential future production scenarios involving CI/CD pipelines, we evaluated Mixtral for the Assistant. Our goal was to create prompts that would direct the model to use specific tools and return a JSON response detailing the tool name and its arguments. However, our experiments revealed that Mixtral struggles with complex tasks. While it can handle simple, isolated examples, it falls short when dealing with conversations that include multiple function calls. The repository contains these trials; although they work with the Assistant when equipped with the Mixtral model, the results are less than satisfactory.
 
