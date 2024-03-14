@@ -33,7 +33,7 @@ def run(llm_name: LLM_NAMES):
         find_hotels=find_hotels_mock,
     )
     persona = """
-        My name is John Smith. I don't like answering questions and I'm not very polite.
+        My name is John Wick. I don't like answering questions and I'm not very polite.
         My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
         I will not provide any information unless asked.
     """  # noqa E501

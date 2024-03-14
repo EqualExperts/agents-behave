@@ -41,7 +41,7 @@ class LLMConfig(Unionable):
         no_model.pop("model")
         return LLMConfig(**no_model, model=model)
 
-    def with_function_calling(self) -> "LLMConfig":
+    def has_function_calling_support(self) -> "LLMConfig":
         no_function_calling = asdict(self)
         no_function_calling.pop("supports_function_calling")
         return LLMConfig(**no_function_calling, supports_function_calling=True)

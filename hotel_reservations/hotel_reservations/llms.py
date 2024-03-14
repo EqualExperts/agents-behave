@@ -58,16 +58,18 @@ class LLMManager:
         llm_config = llm_config.with_llm_name(llm_name)
         if llm_name == "openai-gpt-3.5":
             return OpenAILLM(
-                llm_config.with_model("gpt-3.5-turbo").with_function_calling()
+                llm_config.with_model("gpt-3.5-turbo").has_function_calling_support()
             )
 
         elif llm_name == "openai-gpt-4":
             return OpenAILLM(
-                llm_config.with_model("gpt-4-turbo-preview").with_function_calling()
+                llm_config.with_model(
+                    "gpt-4-turbo-preview"
+                ).has_function_calling_support()
             )
         elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(
                 llm_config.with_model("mistralai/mixtral-8x7b-instruct")
             )
         else:
-            raise ValueError(f"Unknown LLM type: {llm_name}")
+            raise ValueError(f"Unknown LLM type: {llm_name} (Available: {LLM_NAMES})")
