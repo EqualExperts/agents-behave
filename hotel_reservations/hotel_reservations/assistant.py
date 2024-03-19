@@ -6,7 +6,6 @@ from langchain.agents.format_scratchpad import (
     format_log_to_str,
     format_to_openai_function_messages,
 )
-from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.render import render_text_description_and_args
@@ -20,6 +19,9 @@ from agents_behave.base_llm import BaseLLM
 from hotel_reservations.core import FindHotels, MakeReservation
 from hotel_reservations.function_call_agent_output_parser import (
     FunctionCallAgentOutputParser,
+)
+from hotel_reservations.openai_functions_copy import (
+    OpenAIFunctionsAgentOutputParserCopy,
 )
 
 
@@ -95,7 +97,7 @@ class HotelReservationsAssistant:
             )
             | prompt
             | llm_with_tools
-            | OpenAIFunctionsAgentOutputParser()
+            | OpenAIFunctionsAgentOutputParserCopy()
         )
 
     def build_agent_without_function_calling(self, llm: BaseLanguageModel, tools: list):
