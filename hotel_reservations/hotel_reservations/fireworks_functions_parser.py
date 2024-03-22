@@ -20,8 +20,6 @@ class FireWorksFunctionParser(AgentOutputParser):
         if not isinstance(message, AIMessage):
             raise TypeError(f"Expected an AI message got {type(message)}")
 
-        print(f"message {message}")
-        exit(1)
         function_calls = message.additional_kwargs.get("tool_calls", [])
 
         if function_calls and len(function_calls) > 0:

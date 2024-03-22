@@ -31,9 +31,6 @@ class OpenAIFunctionsAgentOutputParserCopy(AgentOutputParser):
         if not isinstance(message, AIMessage):
             raise TypeError(f"Expected an AI message got {type(message)}")
 
-        print("OpenAIFunctionsAgentOutputParserCopy")
-        print(f"type(message) {type(message)}")
-        print(f"message {message}")
         function_call = message.additional_kwargs.get("function_call", {})
 
         if function_call:
