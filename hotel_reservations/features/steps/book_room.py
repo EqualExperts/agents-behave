@@ -45,10 +45,12 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = context.hotels
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
+    current_date_mock = Mock(return_value=context.date)
     assistant = HotelReservationsAssistant(
         llm=context.open_ai_llm,
         make_reservation=make_reservation_mock,
         find_hotels=find_hotels_mock,
+        current_date=current_date_mock,
     )
     context.make_reservation_mock = make_reservation_mock
     context.find_hotels_mock = find_hotels_mock
@@ -105,3 +107,5 @@ def step_impl(context, minimum_acceptable_score):  # noqa F811 # type: ignore
         greater_than(int(minimum_acceptable_score)),
         reason=response["feedback"],
     )
+
+    print(response["feedback"])
