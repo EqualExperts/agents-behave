@@ -2,7 +2,9 @@
 
 ## Introduction
 
-In this [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we discussed the challenges of testing conversational assistants and introduced a method for evaluating their performance using a simplified example. In this article, we will delve deeper into the testing process, exploring how we can test conversational assistants by confirming that the tools they use are triggered correctly and evaluating the conversational quality of their interactions.
+In this [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we discussed the challenges of testing conversational assistants and introduced a method for evaluating their performance using a simplified example. We will delve deeper into the testing process, exploring how we can test conversational assistants by confirming that the tools they use are triggered correctly and evaluating the conversational quality of their interactions.
+
+You can check out the complete code for this example at the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
 
 ## The Conversational Assistant Scenario
 
@@ -10,20 +12,20 @@ We want to develop an LLM assistant capable of facilitating hotel room bookings 
 
 *Note: This scenario is intentionally simplified. In practical applications, various factors involved in booking hotel rooms, such as payment methods and cancellation policies, must be considered. However, for the purposes of this example, we shall focus on the basics.*
 
-So, what constitutes our starting point, and how do we assess our assistant's performance?
+So, how do we assess our assistant's performance?
 
 We aim to create an assistant capable of sustaining a dialogue with a user. To evaluate its performance, we will need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and crucially, ensure that the booking function (one of the tools available to the assistant) is triggered with the correct parameters. It is also vital to test the assistant across diverse user-profiles and types of requests.
 
-Therefore, our requirements include:
+Therefore we will need the following components:
 
+- `HotelReservationsAssistant`: This is the assistant we want to test. It should be capable of booking hotel rooms and interacting with users in a conversational manner.
 - `LLMUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
-- `HotelReservationsAssistant`: Another LLM system capable of booking hotel rooms and retrieving hotel pricing information using tools. This assistant will be evaluated based on its ability to fulfil user requests and the quality of its conversations.
 - `UserAssistantConversation`: An entity that orchestrates the dialogue between the user and the assistant, generating responses from both parties. It will also include a termination condition to conclude the interaction based on specific dialogue content.
 - `ConversationAnalyser`: An LLM system for analysing conversational dynamics. We will employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
 
 The following diagram illustrates the interaction between these components:
 
-![User Agent Conversation](images/user_agent_conversation.png)
+![User Agent Conversation](images/user_agent_conversation_3.png)
 
 ## Our First Test
 
@@ -207,7 +209,7 @@ We considered employing Mixtral for the LLM User due to its adequacy and lower c
 Hello! I'd be happy to help you book a room in London. Could you please specify the type of room you're looking for and any preferences you might have, such as budget, location, or amenities?
 ```
 
-It consistently misinterprets its role, offering instead of requesting help. Despite various attempts with different prompts, we could not secure satisfactory outcomes. This area requires future enhancement.
+It consistently misinterprets its role, offering instead of requesting help. This is something we think could be overcome with more refined prompts, but that wasn't the focus of experiment and using Mixtral also helped reduce costs.
 
 ### Failures of the LLM User
 
@@ -215,18 +217,18 @@ At times, tests may fail because the LLM User does not behave as expected. These
 
 ### Costs and Performance
 
-The expense of running these tests is significant. The GPT-4 model is costly, and the Mixtral model is less effective. It is essential to ensure that the costs remain under control. Moreover, the performance of the tests is concerning. They are slow, and the duration required to conduct them is considerable. However, we anticipate that with the ongoing advancement of LLMs, achieving faster and more cost-effective solutions will become increasingly feasible.
+The expense of running these tests is significant. The GPT-4 model is costly, and the Mixtral model is less effective. It is essential to ensure that the costs remain under control. Moreover, the performance of the tests is concerning. They are slow, and the duration required to conduct them is considerable. However, we anticipate that with the ongoing advancement of Large Language Models (LLMs), achieving faster and more cost-effective solutions will become increasingly feasible.
 
 ### Non-Deterministic Tests
 
-The use of Large Language Models (LLMs) in testing introduces an element of non-determinism. The same test may produce different results upon multiple executions. This variability is a typical characteristic of LLMs and should be carefully considered during test evaluations. A potential solution involves running the tests multiple times and averaging the outcomes. However, this method may not always be practical due to significant costs and time limitations.
+The use of LLMs in testing introduces an element of non-determinism. The same test may produce different results upon multiple executions. This variability is a typical characteristic of LLMs and should be carefully considered during test evaluations. A potential solution involves running the tests multiple times and averaging the outcomes. However, this method may not always be practical due to significant costs and time limitations.
 
 ## Conclusion
 
-In this article, we have demonstrated how to test a conversational assistant. We have illustrated the process of creating a test that simulates a dialogue between a user and an assistant, evaluating the assistant's performance, and verifying that the booking function operates correctly.
+In this blog, we have demonstrated how to test a conversational assistant using a simplified example scenario. We have illustrated the process of creating a test that simulates a dialogue between a user and an assistant, evaluating the assistant's performance, and verifying that the booking function operates correctly.
 
 The example provided is a simplified scenario and does not reflect the complexities of a real-world application. Nevertheless, it serves as a fundamental approach that can be customised for practical application. We have also shared several caveats and lessons learnt during the development of this example, which we hope will prove beneficial to others. We encourage you to explore the complete code for this example at the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
 
-We hope this article has been useful in understanding how to test conversational assistants. 
+We hope this blog has been useful in understanding how to test conversational assistants. 
 
 Thank you for reading!

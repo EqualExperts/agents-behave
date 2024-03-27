@@ -2,19 +2,15 @@
 
 ## Introduction
 
-BDD is a software development approach that focuses on defining the behaviour of a system from the user's perspective. It encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour. By using BDD, we can create feature files that describe the expected behaviour of the system, define step definitions that implement this behaviour, and execute the tests using the `behave` library in Python.
+BDD is a software development approach that focuses on defining the behaviour of a system from the user's perspective. It encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour. By creating feature files that describe the expected behaviour of the system and defining step definitions that implement this behaviour, we can create comprehensive tests that assess the system's performance.
 
-![Agents Behave](images/agents_behave.png)
-
-In this [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we explored the challenges of testing conversational assistants and introduced a method for evaluating their performance using simulated conversations. In this article, we will delve deeper into the testing process by implementing Behaviour-Driven Development (BDD) to test conversational assistants effectively.
-
-In this other [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-256118), we showed how to test a Conversational Assistant by simulation of conversations between users and assistants. 
+In this other [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-256118), we showed how to test a Conversational Assistant by simulation of conversations between users and assistants.
 
 Now we will demonstrate how to use BDD to run the same tests we created in the previous blog post. We will create feature files that describe the expected behaviour of the system, define step definitions that implement this behaviour, and execute the tests using the `behave` library in Python.
 
 ## Implementing BDD with **`behave`** in Python
 
-We will start by create a feature file that delineates the expected behaviour of our system. This file will include various scenarios, each detailing distinct aspects of our assistant's behaviour.
+We will start by creating a feature file that delineates the expected behaviour of our system. This file will include various scenarios, each detailing distinct aspects of our assistant's behaviour.
 
 Here is our feature file, with one scenario:
 
@@ -57,14 +53,6 @@ Feature: Book a room in a hotel
         Be very polite and helpful
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
     """
-```
-When running a `behave` command, the `behave` library will present us with the steps that we need to implement. We can then create a Python file with the step definitions to execute the test.
-Here is an example for the step `The assistant should get the hotels in London`:
-
-```python
-@behave.then("The assistant should get the hotels in {location}")
-def step_impl(context, location):
-    context.find_hotels_mock.assert_called_once_with(location)
 ```
 
 By authoring the necessary step definitions, we can execute the test and verify the assistant's performance.
@@ -183,7 +171,7 @@ I won't need any more assistance, so don't expect to hear from me again. Goodbye
 -------------------------------------------------------------------------------
 ```
 
-Feedback:
+This is the score and feedback provided by the `ConversationAnalyser`:
 
 ```json
 {
@@ -192,15 +180,13 @@ Feedback:
 }
 ```
 
-BDD facilitates the creation of comprehensive tests that are accessible to both technical and non-technical stakeholders, including product managers and business analysts. This approach enhances collaboration and understanding across teams.
-
 ## Conclusion
 
-In this article, we explored how to use BDD to test conversational assistants effectively. By creating feature files that describe the expected behaviour of the system, defining step definitions that implement this behaviour, and executing the tests using the `behave` library in Python, we can evaluate the assistant's performance in a controlled environment.
+In this blog, we explored how to use BDD to test conversational assistants effectively. By creating feature files that describe the expected behaviour of the system, defining step definitions that implement this behaviour, and executing the tests using the `behave` library in Python, we can evaluate the assistant's performance in a controlled environment.
 
-BDD encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour. By using BDD to test conversational assistants, we can create comprehensive tests that assess the assistant's ability to engage with users effectively and provide accurate responses.
+BDD encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour.
 
-We hope this article has been helpful in understanding how to test conversational assistants using BDD. 
+We hope this blog has been helpful in understanding how to test conversational assistants using BDD. 
 
 Thank you for reading!
 
