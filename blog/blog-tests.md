@@ -2,7 +2,7 @@
 
 ## Introduction
 
-In this [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we discussed the challenges of testing conversational assistants and introduced a method for evaluating their performance using a simplified example. We will delve deeper into the testing process, exploring how we can test conversational assistants by confirming that the tools they use are triggered correctly and evaluating the conversational quality of their interactions.
+In a previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we discussed the challenges of testing conversational assistants and introduced a method for evaluating their performance using a simplified example. We will delve deeper into the testing process, exploring how we can test conversational assistants by confirming that the tools they use are triggered correctly and evaluating the conversational quality of their interactions.
 
 You can check out the complete code for this example at the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
 
@@ -199,7 +199,9 @@ In developing this example, we strived to optimise the Assistant's performance, 
 
 ### Mixtral's Limitations
 
-In an effort to reduce costs, both in this developmental phase and in potential future production scenarios involving CI/CD pipelines, we evaluated Mixtral for the Assistant. Our goal was to create prompts that would direct the model to use specific tools and return a JSON response detailing the tool name and its arguments. However, our experiments revealed that Mixtral struggles with complex tasks. While it can handle simple, isolated examples, it falls short when dealing with conversations that include multiple function calls. The repository contains these trials; although they work with the Assistant when equipped with the Mixtral model, the results are less than satisfactory.
+In an effort to reduce costs, both in this developmental phase and in potential future production scenarios involving CI/CD pipelines, we evaluated Mixtral for the Assistant. Our goal was to create prompts that would direct the model to use specific tools and return a JSON response detailing the tool name and its arguments. 
+
+However, our experiments revealed that Mixtral struggles with complex tasks. While it can handle simple, isolated examples, it falls short when dealing with conversations that include multiple function calls. The repository contains these trials; although they work with the Assistant when equipped with the Mixtral model, the results are less than satisfactory.
 
 ### GPT-4's Excessive Competence
 
@@ -227,8 +229,8 @@ The use of LLMs in testing introduces an element of non-determinism. The same te
 
 In this blog, we have demonstrated how to test a conversational assistant using a simplified example scenario. We have illustrated the process of creating a test that simulates a dialogue between a user and an assistant, evaluating the assistant's performance, and verifying that the booking function operates correctly.
 
-The example provided is a simplified scenario and does not reflect the complexities of a real-world application. Nevertheless, it serves as a fundamental approach that can be customised for practical application. We have also shared several caveats and lessons learnt during the development of this example, which we hope will prove beneficial to others. We encourage you to explore the complete code for this example at the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
+The example provided is a simplified scenario and does not reflect the complexities of a real-world application. Nevertheless, it serves as a fundamental approach that can be customised for practical application. We have also shared several caveats and lessons learnt during the development of this example, which we hope will prove beneficial to others.
 
-We hope this blog has been useful in understanding how to test conversational assistants. 
+We encourage you to explore the complete code for this example at the [agents_behave](https://github.com/EqualExperts/agents_behave) repository.
 
-Thank you for reading!
+We hope this blog has been useful in understanding how to test conversational assistants. Feel free to reach out with any questions or feedback.

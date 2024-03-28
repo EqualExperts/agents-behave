@@ -4,7 +4,7 @@
 
 BDD is a software development approach that focuses on defining the behaviour of a system from the user's perspective. It encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour. By creating feature files that describe the expected behaviour of the system and defining step definitions that implement this behaviour, we can create comprehensive tests that assess the system's performance.
 
-In this other [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-256118), we showed how to test a Conversational Assistant by simulation of conversations between users and assistants.
+In a previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-256118) post, we showed how to test a Conversational Assistant by simulation of conversations between users and assistants.
 
 Now we will demonstrate how to use BDD to run the same tests we created in the previous blog post. We will create feature files that describe the expected behaviour of the system, define step definitions that implement this behaviour, and execute the tests using the `behave` library in Python.
 
@@ -187,6 +187,4 @@ In this blog, we explored how to use BDD to test conversational assistants effec
 BDD encourages collaboration between technical and non-technical stakeholders, ensuring that everyone has a shared understanding of the system's behaviour.
 
 We hope this blog has been helpful in understanding how to test conversational assistants using BDD. 
-
-Thank you for reading!
 

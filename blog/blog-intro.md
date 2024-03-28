@@ -43,6 +43,7 @@ Behaviour-Driven Development (BDD) is a software development approach that focus
 
 In this [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-using-bdd-256119), we will explore how to use BDD to test conversational assistants effectively. We will create feature files that describe the expected behaviour of the system, define step definitions that implement this behaviour, and execute the tests using the `behave` library in Python.
 
+We hope you find this blog post insightful and informative. Check out these blogs if you're interested in the technical details of these experiments:
 
-
-
+- [Testing Conversational Assistants](https://equalexperts.blogin.co/posts/256119)
+- [Testing Conversational Assistants using BDD](https://equalexperts.blogin.co/posts/testing-conversational-assistants-using-bdd-256119)
