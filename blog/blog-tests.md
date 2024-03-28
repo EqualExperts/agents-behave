@@ -185,7 +185,8 @@ Feedback from the Conversation Analyser:
 {
     "score": 9,
     "feedback": "The assistant has successfully met all the criteria specified. The assistant has provided the user with the price per night, asked the user if it is ok, asked for all the information needed to make a reservation, made the reservation, and has been very polite and helpful throughout the conversation. However, the assistant could have explicitly confirmed the price per night with the user before proceeding with the reservation."
-}```
+}
+```
 
 ## Caveats and Lessons Learnt
 
@@ -216,6 +217,10 @@ It consistently misinterprets its role, offering instead of requesting help. Thi
 ### Failures of the LLM User
 
 At times, tests may fail because the LLM User does not behave as expected. These cases are essentially false negatives since the assistant functions correctly. The LLM User's accuracy largely depends on the prompt, which should be refined in future updates.
+
+### Conversational Analyser Limitations
+
+The Conversation Analyser is a simple tool that evaluates the assistant's performance based on predefined criteria. It is not a comprehensive solution and may not always provide accurate feedback. Enhancing this tool to include more sophisticated evaluation mechanisms is a potential area for improvement. This may involve human evaluation to ensure a more precise assessment of the assistant's performance, especially until we can fully trust the capabilities of the LLM.
 
 ### Costs and Performance
 
