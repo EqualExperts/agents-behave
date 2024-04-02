@@ -1,4 +1,4 @@
-from agents_behave.llm_user import TestUser
+from agents_behave.test_user import TestUser
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import find_hotels, make_reservation
 from hotel_reservations.llms import LLMManager
