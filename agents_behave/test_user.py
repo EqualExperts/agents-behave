@@ -17,7 +17,7 @@ class User:
         pass
 
 
-class LLMUser(User):
+class TestUser(User):
     def __init__(self, llm: BaseLLM, persona: str):
         self.chat_history = []
         self.agent = self.build_agent(llm, persona)

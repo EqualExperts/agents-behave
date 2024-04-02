@@ -5,8 +5,8 @@ import behave
 from hamcrest import assert_that, greater_than
 
 from agents_behave.conversation_analyser import ConversationAnalyser
-from agents_behave.llm_user import LLMUser
-from agents_behave.user_agent_conversation import UserAssistantConversation
+from agents_behave.conversation_runner import ConversationRunner
+from agents_behave.test_user import TestUser
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 
@@ -17,7 +17,7 @@ def format_date(date: str):
 
 @behave.given("A user with the following persona")
 def step_impl(context):  # noqa F811 # type: ignore
-    context.llm_user = LLMUser(
+    context.llm_user = TestUser(
         llm=context.openrouter_llm,
         persona=context.text,
     )
@@ -59,7 +59,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
         response = assistant.chat(query)
         return response["output"]
 
-    context.conversation = UserAssistantConversation(
+    context.conversation = ConversationRunner(
         assistant=assistant_chat_wrapper,
         user=context.llm_user,
         stop_condition=lambda state: state.last_assistant_message_contains(stop_word),

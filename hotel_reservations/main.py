@@ -5,8 +5,8 @@ from unittest.mock import Mock
 from dotenv import load_dotenv
 
 from agents_behave.conversation_analyser import ConversationAnalyser
-from agents_behave.llm_user import LLMUser
-from agents_behave.user_agent_conversation import UserAssistantConversation
+from agents_behave.conversation_runner import ConversationRunner
+from agents_behave.test_user import TestUser
 from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMConfig, LLMManager
@@ -44,7 +44,7 @@ def run(llm_name: LLM_NAMES):
         My name is John Smith.
         My goal is to book a room in an hotel in London, starting in 2024-02-09 and ending in 2024-02-11, for 3 guests.
     """  # noqa E501
-    llm_user = LLMUser(
+    llm_user = TestUser(
         llm=user_llm,
         persona=persona,
     )
@@ -53,7 +53,7 @@ def run(llm_name: LLM_NAMES):
         response = assistant.chat(query)
         return response["output"]
 
-    conversation = UserAssistantConversation(
+    conversation = ConversationRunner(
         user=llm_user,
         assistant=assistant_chat_wrapper,
         stop_condition=lambda state: "bye"
