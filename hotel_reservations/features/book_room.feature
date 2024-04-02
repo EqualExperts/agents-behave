@@ -1,5 +1,6 @@
 Feature: Book a room in a hotel
 
+  @wip
   Scenario: A helpful user
      Given A user with the following persona:
         """
@@ -68,4 +69,3 @@ Feature: Book a room in a hotel
         Be very polite and helpful
         There is no need to ask for the user for anything else, like contact information, payment method, etc.
       """
-

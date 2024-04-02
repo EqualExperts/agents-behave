@@ -36,7 +36,6 @@ class MakeReservationInput(BaseModel):
 
 
 class FindHotelsInput(BaseModel):
-    name: str = Field(description="The name of the hotel.", default="")
     location: str = Field(description="The location of the hotel.", default="")
 
 
@@ -148,7 +147,7 @@ class HotelReservationsAssistant:
 
         @tool(args_schema=FindHotelsInput)
         def find_hotels_tool(location: str):
-            """Useful to find hotels by name and/or location."""
+            """Useful to find hotels by location."""
             return self.find_hotels(location)
 
         tools: list = [make_reservation_tool, find_hotels_tool]

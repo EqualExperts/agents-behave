@@ -1,3 +1,5 @@
+from datetime import date
+
 from dotenv import load_dotenv
 
 from agents_behave.base_llm import LLMConfig
@@ -19,3 +21,5 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
 def before_all(context):
     context.open_ai_llm = create_llm("OpenAI", "openai-gpt-4")
     context.openrouter_llm = create_llm("OpenRouter", "openrouter-mixtral")
+    context.date = date.today()
+    context.hotels = []
