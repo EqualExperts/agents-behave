@@ -19,8 +19,8 @@ We aim to create an assistant capable of sustaining a dialogue with a user. To e
 Therefore we will need the following components:
 
 - `HotelReservationsAssistant`: This is the assistant we want to test. It should be capable of booking hotel rooms and interacting with users in a conversational manner.
-- `LLMUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
-- `UserAssistantConversation`: An entity that orchestrates the dialogue between the user and the assistant, generating responses from both parties. It will also include a termination condition to conclude the interaction based on specific dialogue content.
+- `TestUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
+- `ConversationRunner`: An entity that orchestrates the dialogue between the user and the assistant, generating responses from both parties. It will also include a termination condition to conclude the interaction based on specific dialogue content.
 - `ConversationAnalyser`: An LLM system for analysing conversational dynamics. We will employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
 
 The following diagram illustrates the interaction between these components:
@@ -31,7 +31,7 @@ The following diagram illustrates the interaction between these components:
 
 We will commence by initiating a test that simulates a dialogue between a user and an assistant. This test aims to evaluate the assistant's proficiency in booking a hotel room in London, adhering to the user's budget and specific guest requirements. Moreover, we will scrutinise the conversational quality of the assistant to ensure it aligns with predefined standards.
 
-The test begins with the creation of two language model instances: one employing the `gpt-4-turbo-preview` model and the other utilising the `mixtral-8x7b-instruct` model. We selected Mixtral because it efficiently orchestrates the `LLMUser` and the `ConversationalAnalyser` components, offering a more cost-effective solution than GPT-4. Nevertheless, due to Mixtral's limitations in handling function-based interactions, we employ the GPT-4 model for assistant functionalities. (another reason for using Mixtral for the LLM User will be discussed later).
+The test begins with the creation of two language model instances: one employing the `gpt-4-turbo-preview` model and the other utilising the `mixtral-8x7b-instruct` model. We selected Mixtral because it efficiently orchestrates the `TestUser` and the `ConversationalAnalyser` components, offering a more cost-effective solution than GPT-4. Nevertheless, due to Mixtral's limitations in handling function-based interactions, we employ the GPT-4 model for assistant functionalities. (another reason for using Mixtral for the Test User will be discussed later).
 
 ```python
     gpt_4_llm = create_llm("GPT-4", "openai-gpt-4")
@@ -63,7 +63,7 @@ We specify that the `find_hotels` function should yield a collection of hotels b
     )
 ```
 
-Next, we create an LLM User designed to simulate conversations with the assistant.
+Next, we create an Test User designed to simulate conversations with the assistant.
 
 ```python
 
@@ -74,19 +74,19 @@ Next, we create an LLM User designed to simulate conversations with the assistan
         It will be for 2 adults and 1 child.
         My budget is $350 per night.
     """
-    llm_user = LLMUser(
+    llm_user = TestUser(
         llm = mixtral_llm,
         persona = persona,
     )
 ```
 
-Finally, we introduce the `UserAssistantConversation` class. This entity orchestrates the conversation between the user and the assistant. A termination condition is applied to conclude the interaction based on specific dialogue content.
+Finally, we introduce the `ConversationRunner` class. This entity orchestrates the conversation between the user and the assistant. A termination condition is applied to conclude the interaction based on specific dialogue content.
 
 In this scenario, the conversation concludes when the assistant's says something that includes the term "bye".
 
 ```python
     
-    conversation = UserAssistantConversation(
+    conversation = ConversationRunner(
         assistant = assistant_chat_wrapper,
         user = llm_user,
         stop_condition = lambda state: state.last_assistant_message_contains("bye"),
@@ -206,7 +206,7 @@ However, our experiments revealed that Mixtral struggles with complex tasks. Whi
 
 ### GPT-4's Excessive Competence
 
-We considered employing Mixtral for the LLM User due to its adequacy and lower cost. Yet, another reason for its preference over GPT-4 is the latter's exceptional proficiency, which makes it less suitable for simulating a typical user. Interactions with GPT-4 often start off on the wrong footing, as it tends to offer help instead of seeking it:
+We considered employing Mixtral for the Test User due to its adequacy and lower cost. Yet, another reason for its preference over GPT-4 is the latter's exceptional proficiency, which makes it less suitable for simulating a typical user. Interactions with GPT-4 often start off on the wrong footing, as it tends to offer help instead of seeking it:
 
 ```text
 Hello! I'd be happy to help you book a room in London. Could you please specify the type of room you're looking for and any preferences you might have, such as budget, location, or amenities?
@@ -214,9 +214,9 @@ Hello! I'd be happy to help you book a room in London. Could you please specify 
 
 It consistently misinterprets its role, offering instead of requesting help. This is something we think could be overcome with more refined prompts, but that wasn't the focus of experiment and using Mixtral also helped reduce costs.
 
-### Failures of the LLM User
+### Failures of the Test User
 
-At times, tests may fail because the LLM User does not behave as expected. These cases are essentially false negatives since the assistant functions correctly. The LLM User's accuracy largely depends on the prompt, which should be refined in future updates.
+At times, tests may fail because the Test User does not behave as expected. These cases are essentially false negatives since the assistant functions correctly. The Test User's accuracy largely depends on the prompt, which should be refined in future updates.
 
 ### Conversational Analyser Limitations
 
