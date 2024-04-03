@@ -94,9 +94,9 @@ def generate_whatsapp_html(messages):
 if __name__ == "__main__":
     messages_1 = [
         """
-Hello Assistant, I need your help with booking a hotel room. 
-I'm John Smith and I'm planning to visit London from 2024-02-09 to 2024-02-11. 
-There will be two adults and one child in the group. 
+Hello Assistant, I need your help with booking a hotel room.
+I'm John Smith and I'm planning to visit London from 2024-02-09 to 2024-02-11.
+There will be two adults and one child in the group.
 I would like to keep the cost under $350 per night. Can you please help me find a suitable hotel?
 Thank you.
         """,
@@ -112,13 +112,13 @@ The Notting Hill Hotel is also available but exceeds your budget at $400 per nig
 Would you like to proceed with a reservation at the Kensington Hotel for your stay from 2024-02-09 to 2024-02-11 for two adults and one child?
         """,  # noqa E501
         """
-Thank you for finding the Kensington Hotel for me. 
+Thank you for finding the Kensington Hotel for me.
 I would like to proceed with the reservation for two adults and one child from 2024-02-09 to 2024-02-11.
 Please go ahead and complete the booking. I appreciate your help.
         """,
         """
-The reservation at the Kensington Hotel for John Smith has been successfully completed. 
-Your stay is booked from 2024-02-09 to 2024-02-11 for two adults and one child. 
+The reservation at the Kensington Hotel for John Smith has been successfully completed.
+Your stay is booked from 2024-02-09 to 2024-02-11 for two adults and one child.
 If you have any more requests or need further assistance, feel free to ask. Enjoy your trip to London!
         """,
         """
