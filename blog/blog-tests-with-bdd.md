@@ -182,22 +182,24 @@ Despite a challenging interaction, the assistant managed to ensure that the book
 
 ![alt text](images/chat_2.png)
 
-## Caveats and Lessons Learnt
+We've shown two scenarios where the assistant successfully booked a hotel room for two different types of users. However, for more complex scenarios, the assistant may not perform as expected.
 
-We've shown two scenarios where the assistant successfully booked a hotel room for two different types of users. However, for more complex scenarios, the assistant may not perform as expected. Moreover, running these same tests multiple times may yield different results due to the non-deterministic nature of LLMs. All of these aspect should be considered when we think of production scenarios but are out of the scope of this blog post. Out goal here was to propose the use of BDD to help us moving towards a more reliable and user-centric testing approach.
+Moreover, running these same tests multiple times may yield different results due to the non-deterministic nature of LLMs. All of these aspects should be considered when we think of production scenarios but are out of the scope of this blog post. Out goal here was to propose the use of BDD to help us move towards a more reliable and user-centric testing approach.
+
+## Caveats and Lessons Learnt
 
 The example provided here emerged from extensive trials and errors and remains imperfect. The assistant continues to face challenges with numerous edge cases.
 
 A few insights we've gained include:
 
-### It'a all about the prompts
+### It'a All About The Prompt
 
 The quality of the prompts is crucial. They must be clear, concise, and unambiguous to ensure that the
 LLM behaves as expected.
 
 We learnt that sometimes, a small change in the prompt can have a significant impact on the LLM's response. Having these automated tests in place proved to be very helpful in identifying issues with the prompts and improving them. This was true for all the prompts used for the Assistant, the TestUser, and the Conversation Analyser.
 
-### Mixtral's Limitations
+### Open-source Models Limitations
 
 In an effort to reduce costs, both in this developmental phase and in potential future production scenarios involving CI/CD pipelines, we evaluated Mixtral for the Assistant. Our goal was to create prompts that would direct the model to use specific tools and return a JSON response detailing the tool name and its arguments. 
 
@@ -213,7 +215,7 @@ The Conversation Analyser is a simple tool that evaluates the assistant's perfor
 
 ### Costs and Performance
 
-The expense of running these tests is significant. The GPT-4 model is costly, and the Mixtral model is less effective. It is essential to ensure that the costs remain under control. Moreover, the performance of the tests is concerning. They are slow, and the duration required to conduct them is considerable. However, we anticipate that with the ongoing advancement of Large Language Models (LLMs), achieving faster and more cost-effective solutions will become increasingly feasible.
+The expense of running these tests is significant. The GPT-4 model is costly, and the Mixtral model is less effective. It is essential to ensure that the costs remain under control. Moreover, the performance of the tests is concerning. They are slow, and the duration required to conduct them is considerable. However, we anticipate that with the ongoing advancement of LLMs, achieving faster and more cost-effective solutions will become increasingly feasible.
 
 ### Non-Deterministic Tests
 
@@ -224,6 +226,8 @@ The use of LLMs in testing introduces an element of non-determinism. The same te
 In this blog, we have demonstrated how to test a conversational assistant using a simplified example scenario.
 
 We have discussed the importance of simulating conversations between the user and the assistant, analysing these interactions, and evaluating the assistant's performance based on predefined criteria. We have also explored the benefits of using BDD to test the assistant and the challenges encountered during the development process.
+
+We think that creating automated tests for conversational assistants using BDD is a promising approach. It can help improve the development of conversational assistants and sustain a higher degree of confidence in their performance, when moving towards production.
 
 The example provided is a simplified scenario and does not reflect the complexities of a real-world application. Nevertheless, it serves as a fundamental approach that can be customised for practical application. We have also shared several caveats and lessons learnt during the development of this example, which we hope will prove beneficial to others.
 
