@@ -2,11 +2,13 @@
 
 ## Introduction
 
-In a previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we explored the intricate process of testing conversational assistants. We championed the adoption of Behaviour-Driven Development (BDD) as a solution to tackle issues such as non-determinism and the necessity of simulating a wide range of user interactions to guarantee they achieve their goals efficiently.
+In a previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we've talked about the importance of testing conversational assistants and the challenges involved in this process. We've also discussed the benefits of using BDD to test conversational assistants and how it can help address some of these challenges.
+
+In this one, we'll show you a hands-on example of how to test a chat assistant using BDD. We're going to set up a situation where we aim to build an assistant that helps users book hotel rooms. We'll outline what the assistant should do, the tools it will need, and how we'll judge its success. Then, using BDD, we'll test the assistant and see how well it meets our standards.
 
 ## Our Assistant Example
 
-We want to develop an LLM assistant capable of facilitating hotel room bookings for users. This assistant should accurately interpret user requests and, when necessary, request additional information. It will utilise specific tools to fulfil these requests, including functionalities for booking rooms and retrieving hotel pricing per night.
+We want to develop an LLM assistant capable of facilitating hotel room bookings for users. This assistant should accurately interpret user requests and, when necessary, request additional information. It utilises specific tools to fulfil these requests, including functionalities for booking rooms and retrieving hotel pricing per night.
 
 *Note: This scenario is intentionally simplified. In practical applications, various factors involved in booking hotel rooms, such as payment methods and cancellation policies, must be considered. However, for the purposes of this example, we shall focus on the basics.*
 
@@ -14,20 +16,22 @@ So, how do we assess our assistant's performance?
 
 ## Conversation Simulation
 
-We aim to create an assistant capable of sustaining a dialogue with a user. To evaluate its performance, we will need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and crucially, ensure that the booking function (one of the tools available to the assistant) is triggered with the correct parameters. It is also vital to test the assistant across diverse user-profiles and types of requests.
+We aim to create an assistant capable of sustaining a dialogue with a user. To evaluate its performance, we need the ability to simulate conversations between the user and the assistant, analyse these interactions to gauge the assistant's effectiveness, and crucially, ensure that the booking function (one of the tools available to the assistant) is triggered with the correct parameters. It is also vital to test the assistant across diverse user-profiles and types of requests.
 
-Therefore we will need the following components:
+To acomplish this, we will use the following components:
 
 - `HotelReservationsAssistant`: This is the assistant we want to test. It should be capable of booking hotel rooms and interacting with users in a conversational manner.
-- `TestUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This will allow us to evaluate the assistant against various user backgrounds and needs.
-- `ConversationRunner`: An entity that orchestrates the dialogue between the user and the assistant, generating responses from both parties. It will also include a termination condition to conclude the interaction based on specific dialogue content.
-- `ConversationAnalyser`: An LLM system for analysing conversational dynamics. We will employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
+- `TestUser`: A Large Language Model (LLM) system capable of engaging in dialogue with the assistant, with the intention of reserving a hotel room for specific dates. This allow us to evaluate the assistant against various user backgrounds and needs.
+- `ConversationRunner`: An entity that orchestrates the dialogue between the user and the assistant.
+- `ConversationAnalyser`: An LLM system for analysing conversational dynamics. Hwre we employ a straightforward scoring framework paired with criteria to assess the assistant's performance.
 
 The following diagram illustrates the interaction between these components:
 
 ![User Agent Conversation](images/conversation_runner.png)
 
 ### Choosing a model
+
+Out of these components, the `HotelReservationsAssistant`, `TestUser`, and `ConversationAnalyser` will be powered by Large Language Models (LLMs). One of the first decisions we need to make is which model to use for each of these components.
 
 We analysed several models to determine the most suitable for our scenario, regarding cost and performance.
 
@@ -39,29 +43,33 @@ Finally, for the ConversationAnalyser we will again use GPT-4. Evaluating an LLM
 
 ## Testing
 
-Refer to our previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we want to evalute the assistant's performance on two different, but complementary, levels:
+Refer to our previous [blog](https://equalexperts.blogin.co/posts/testing-conversational-assistants-part-1-256112) post, we aim to assess the assistant's performance across two distinct yet complementary aspects:
 
-1. **Tool Interactions**: We need to verify that the assistant correctly triggers the tools with the appropriate arguments and that the tools execute successfully. We can achieve this by using common testing techniques, such as mocking the tools and verifying that they are called with the correct parameters.
+1. **Tool Interactions**: We need to verify that the assistant correctly triggers the tools with the appropriate arguments and that the tools execute successfully.
 
 2. **Conversational Quality**: We need to assess the assistant's ability to engage in dialogue effectively, maintain context, and provide relevant responses. This involves evaluating the assistant's conversational quality, including its ability to understand user intent and deliver appropriate responses.
 
 ### Tool Interactions
 
-The tools used by the HotelReservationsAssistant, `make_reservation` and `find_hotels`, are injected into the assistant. We will use mock functions to simulate the functionalities of these tools. These mocks will verify that the assistant correctly triggers the tools with the appropriate arguments and that the tools execute successfully.
+We can achieve this by using common testing techniques. The tools used by the `HotelReservationsAssistant`, `make_reservation` and `find_hotels`, are injected into the assistant. We inject mock functions to verify that these tools are triggered with the correct parameters.
 
 This is the deterministic part of the test. There is no ambiguity in the expected outcomes, the tools are either triggered correctly with the right parameters, or they are not. And if not, the test fails.
 
 ### Conversational Quality
 
-The conversational quality evaluation is more nuanced. We will define a set of criteria that the assistant should meet during the conversation. These criteria will include aspects such as asking for all the information needed to make a reservation, being polite and helpful, and not asking the user for unnecessary information.
+The conversational quality evaluation is more nuanced. We define a set of criteria that the assistant should meet during the conversation. These criteria include aspects such as asking for all the information needed to make a reservation, being polite and helpful, and not asking the user for unnecessary information.
 
-We will then use an LLM to analyse the conversation and provide feedback on the assistant's performance based on these criteria. The LLM will evaluate the conversation against the predefined criteria and provide a score based on how well the assistant meets these standards.
+We then use an LLM to analyse the conversation and provide feedback on the assistant's performance based on these criteria. The LLM evaluates the conversation against the predefined criteria and provide a score based on how well the assistant meets these standards.
+
+*Note: Evaluating an LLM with another LLM is a complex and controversial topic. We are aware of the limitations of this approach, but this is not the focus of this blog post. We are using this method as a simplified way to evaluate the assistant's performance based on predefined criteria.*
 
 ## Using BDD to Test the Assistant
 
-Using BDD presents some advantages over traditional testing methods, such as a more user-centric approach and a shared understanding of the system's behaviour. Our subject under test is the `HotelReservationsAssistant`, and the tests will be very similar to each other, which will allow us to reuse the BDD same steps for different scenarios.
+Using BDD presents some advantages over traditional testing methods, such as a more user-centric approach and a shared understanding of the system's behaviour. Our subject under test is the `HotelReservationsAssistant`.
 
-We will use the Python `behave` library to implement the BDD tests. We will create feature files that describe the expected behaviour of the system and define step definitions that implement this behaviour. By running the `behave` command, we can execute the tests and verify the assistant's performance.
+The purpose of these tests is to ensure that the assistant behaves as expected when interacting with different types of users with different requests. This means the tests will all follow a similar structure: a type of user with a specific booking request. This makes these tests very suitable for BDD, as we wiil see,
+
+The Python `behave` library is used to implement the BDD tests. We will create feature files that describe the expected behaviour of the system and define step definitions that implement this behaviour.
 
 Here is our feature file, with only one scenario:
 
@@ -106,11 +114,20 @@ Feature: Book a room in a hotel
     """
 ```
 
-By authoring the necessary step definitions, we can execute the test and verify the assistant's performance.
+To implement this test, we need to define the step definitions that will execute the actions described in the feature file. The steps here, implemented with Python functions, are:
 
-Upon execution of he `behave` command, and with our current implementaion, the tests will pass.
+- `Given A user with the following persona`
+- `And We have the following hotels`
+- `When The user starts a conversation that should end when the assistant says bye`
+- `Then The assistant should get the hotels in London`
+- `And A reservation should be made for the user with the following details`
+- `And The conversation should fullfill the following criteria`
 
-Below is the detailed conversation history:
+These same steps will be used for all the scenarios we want to test. The only thing that will change is the user persona and the expected outcome.
+
+Running the test with this scenario will simulate a conversation between the user and the assistant, evaluate the assistant's performance based on the predefined criteria, and provide feedback on how well the assistant met these standards.
+
+Below is the conversation history generated by this scenario:
 
 ![chat 1](images/chat_1.png)
 
@@ -122,8 +139,6 @@ And here is the feedback from the Conversation Analyser:
     "feedback": "The assistant has successfully met all the criteria specified. The assistant has provided the user with the price per night, asked the user if it is ok, asked for all the information needed to make a reservation, made the reservation, and has been very polite and helpful throughout the conversation. However, the assistant could have explicitly confirmed the price per night with the user before proceeding with the reservation."
 }
 ```
-
-The assistant has successfully met all the criteria specified, with a score of 9. The assistant has provided the user with the price per night, asked the user if it is ok, asked for all the information needed to make a reservation, made the reservation, and has been very polite and helpful throughout the conversation. However, the assistant could have explicitly confirmed the price per night with the user before proceeding with the reservation.
 
 We can now try different scenarios, with a user that's not as helpful as John Smith:
 
@@ -169,7 +184,9 @@ Despite a challenging interaction, the assistant managed to ensure that the book
 
 ## Caveats and Lessons Learnt
 
-The example provided here, which seems to function well, did not develop in isolation. It emerged from extensive trials and errors and remains imperfect. The assistant continues to face challenges with numerous edge cases.
+We've shown two scenarios where the assistant successfully booked a hotel room for two different types of users. However, for more complex scenarios, the assistant may not perform as expected. Moreover, running these same tests multiple times may yield different results due to the non-deterministic nature of LLMs. All of these aspect should be considered when we think of production scenarios but are out of the scope of this blog post. Out goal here was to propose the use of BDD to help us moving towards a more reliable and user-centric testing approach.
+
+The example provided here emerged from extensive trials and errors and remains imperfect. The assistant continues to face challenges with numerous edge cases.
 
 A few insights we've gained include:
 
@@ -178,7 +195,7 @@ A few insights we've gained include:
 The quality of the prompts is crucial. They must be clear, concise, and unambiguous to ensure that the
 LLM behaves as expected.
 
-We learned that sometimes, a small change in the prompt can have a significant impact on the LLM's response. Having these automated tests in place proved to be very helpful in identifying issues with the prompts and improving them. This was true for all the prompts used for the Assistant, the TestUser, and the Conversation Analyser.
+We learnt that sometimes, a small change in the prompt can have a significant impact on the LLM's response. Having these automated tests in place proved to be very helpful in identifying issues with the prompts and improving them. This was true for all the prompts used for the Assistant, the TestUser, and the Conversation Analyser.
 
 ### Mixtral's Limitations
 
