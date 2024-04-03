@@ -51,7 +51,7 @@ Feature: Book a room in a hotel
         Ask for all the information needed to make a reservation
         Make the reservation
         Be very polite and helpful
-        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+        There is no need to ask the user for anything else, like contact information, payment method, etc.
     """
 ```
 
@@ -87,7 +87,7 @@ Running the `behave` command produces the following output:
        Get the price per night for the reservation and ask the user if it is ok
        Ask for all the information needed to make a reservation
        Be very polite and helpful
-       There is no need to ask for the user for anything else, like contact information, payment method, etc.
+       There is no need to ask the user for anything else, like contact information, payment method, etc.
       """
 
 The assistant has met all the criteria specified. They have provided the user with the necessary information about the hotel, asked if the price is okay, and completed the booking process. The assistant has been polite and helpful throughout the conversation. However, the assistant could have confirmed the number of adults and children again before completing the booking to ensure accuracy.
@@ -127,7 +127,7 @@ We can now try different scenarios, such as a user who is not very helpful:
         Ask for all the information needed to make a reservation
         Make the reservation
         Be very polite and helpful
-        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+        There is no need to ask the user for anything else, like contact information, payment method, etc.
       """
 ```
 

@@ -88,7 +88,7 @@ def test_book_a_room_with_a_budget():
         "Get the price per night for the reservation and ask the user if it is ok",
         "Ask for all the information needed to make a reservation",
         "Be very polite and helpful",
-        "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
+        "There is no need to ask the user for anything else, like contact information, payment method, etc.",
     ]
     conversationAnalyzer = ConversationAnalyser(
         llm=conversation_analyser_llm,

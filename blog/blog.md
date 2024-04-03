@@ -129,7 +129,7 @@ Next, we assess the quality of the conversation. To achieve this, we utilise a s
         "Get the price per night for the reservation and ask the user if it is ok",
         "Ask for all the information needed to make a reservation",
         "Be very polite and helpful",
-        "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
+        "There is no need to ask the user for anything else, like contact information, payment method, etc.",
     ]
     conversationAnalyser = ConversationAnalyser(llm=mixtral_llm)
     chat_history = conversation_state.chat_history
@@ -233,7 +233,7 @@ Feature: Book a room in a hotel
         Ask for all the information needed to make a reservation
         Make the reservation
         Be very polite and helpful
-        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+        There is no need to ask the user for anything else, like contact information, payment method, etc.
     """
 ```
 

@@ -67,7 +67,7 @@ def run(llm_name: LLM_NAMES):
         "Ask for all the information needed to make a reservation",
         "Make the reservation",
         "Be very polite and helpful",
-        "There is no need to ask for the user for anything else, like contact information, payment method, etc.",
+        "There is no need to ask the user for anything else, like contact information, payment method, etc.",
     ]
     criteria = [c.strip() for c in criteria if c.strip()]
     conversationAnalyser = ConversationAnalyser(llm=conversation_analyser_llm)

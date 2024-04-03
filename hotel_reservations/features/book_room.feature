@@ -32,7 +32,7 @@ Feature: Book a room in a hotel
         Get the price per night for the reservation and ask the user if it is ok
         Ask for all the information needed to make a reservation
         Be very polite and helpful
-        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+        There is no need to ask the user for anything else, like contact information, payment method, etc.
       """
 
   Scenario: A rough user
@@ -67,5 +67,5 @@ Feature: Book a room in a hotel
         Ask for all the information needed to make a reservation
         Make the reservation
         Be very polite and helpful
-        There is no need to ask for the user for anything else, like contact information, payment method, etc.
+        There is no need to ask the user for anything else, like contact information, payment method, etc.
       """
