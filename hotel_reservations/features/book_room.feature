@@ -1,6 +1,5 @@
 Feature: Book a room in a hotel
 
-  @wip
   Scenario: A helpful user
      Given A user with the following persona:
         """
@@ -40,7 +39,6 @@ Feature: Book a room in a hotel
         """
         My name is John Wick. I don't like answering questions and I'm very rude.
         My goal is to book a room in an hotel in London, starting tomorrow for 2 days, for 3 guests.
-        My budget is $350 per night.
         """
 
        And Today is 2024-03-05

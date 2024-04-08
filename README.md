@@ -1,40 +1,60 @@
-# Conversational AI Testing
+# Testing Conversational Assistants
 
-## Introduction
+## Overview
 
-This repository is dedicated to the exploration and development of testing methodologies for conversational AI agents. The primary goal is to innovate and refine approaches that allow for effective evaluation of these agents in various scenarios. Through this work, we aim to contribute towards the creation of a versatile tool or framework capable of testing any conversational AI agent, keeping in mind the potential for universal applicability as a long-term ambition.
+This repository contains the source code and resources used in the blog post titled "[Testing Conversational Assistants Using BDD](https://equalexperts.blogin.co/posts/testing-conversational-assistants-using-bdd-256119)". The aim of this project is to provide a practical example to accompany the concepts and solutions discussed in the blog post.
 
-## Testing Types
+## Disclaimer
 
-Testing conversational AI involves a range of methodologies that can broadly be classified into two categories: deterministic and non-deterministic tests.
+Please note that the code contained in this repository is not intended for production use. It has been developed for demonstration purposes to support the content of the associated blog post. As such, it may lack the robustness, error handling, and security features required for a production environment. Users are encouraged to use this code as a learning tool and to apply best practices when adapting or extending it for their own use cases.
 
-### Deterministic Tests
+## Installation
 
-Deterministic tests are characterized by a known expected output for given inputs. These tests focus on the ability of conversational AI agents to utilize their integrated tools to accomplish specific tasks. The approach involves:
+### Prerequisites
 
-- **Mocking Tools**: Simulating the tools and services the agent interacts with during a conversation.
-- **Conversation Simulation**: Running scripted conversations to trigger the use of these tools.
-- **Verification**: Checking whether the tools were called as expected, ensuring the agent's functionality aligns with predetermined outcomes.
+This project requires Python 3.8 or later. If you don't have Python installed, you can download it from the [official website](https://www.python.org/downloads/).
 
-### Non-Deterministic Tests
+### Clone the Repository
 
-Non-deterministic tests, on the other hand, deal with outputs that are natural language sentences or full conversations, where the exact response may not be predictable. These tests aim to evaluate the coherence and relevance of the agent's responses. The methodology includes:
+To clone the repository, run the following command:
 
-- **Generative Model Use**: Employing a generative model to produce conversations that serve as input for the AI agent.
-- **Coherence Evaluation**: Analyzing the agent's responses to ensure they are coherent and contextually appropriate within the conversation.
+```bash
+git clone git@github.com:EqualExperts/agents-behave.git
+```
 
-## Simulation of Conversational Dynamics
+### (Optional) Create a virtual environment
 
-To comprehensively test conversational AI agents, we propose creating diverse LLM (Large Language Model) users with distinct personalities. This will allow us to simulate a variety of conversation scenarios between these virtual users and the AI agent, offering a broad assessment of the agent's conversational capabilities.
+It's a good practice to use a virtual environment to avoid conflicts between project dependencies. To create a virtual environment, run:
 
-## Behavior-Driven Development (BDD) for AI Testing
+```bash
+python -m venv .venv
+```
 
-Exploring the application of Behavior-Driven Development (BDD) principles in writing tests for conversational AI agents is another avenue of interest. BDD's emphasis on defining behaviors in understandable language could offer a structured approach to specifying and evaluating the nuanced interactions expected from conversational AI.
+### Install the dependencies
 
-## Vision and Goals
+This project uses [Poetry](https://python-poetry.org/) to manage dependencies. To install the dependencies, run:
 
-While our immediate focus is on developing and refining testing methodologies, our vision extends towards the creation of a comprehensive tool or framework. Such a solution would standardize the testing of conversational AI agents, making it easier for developers to ensure their creations can handle a wide range of interactions effectively and coherently. Importantly, we aim to make this framework accessible not only to developers but also to non-developers. By incorporating Behavior-Driven Development (BDD) principles, we envision a testing environment where tests can be written in a natural, understandable language. This inclusivity means that subject matter experts, product managers, and other stakeholders without a technical background can actively participate in writing and refining tests. This approach democratizes the testing process, fostering collaboration and ensuring a broader range of conversational scenarios are considered and tested, enhancing the robustness and reliability of conversational AI agents across various domains.
+```bash
+poetry install
+```
 
-## Conclusion
+### Activate the virtual environment
 
-This repository is a starting point for collaborative development and exploration in the field of conversational AI testing. By addressing both deterministic and non-deterministic testing challenges, simulating complex conversational dynamics, and exploring the integration of BDD methodologies, we aim to push the boundaries of what's possible in ensuring the reliability and effectiveness of conversational AI agents. Contributions, ideas, and collaborations are welcome as we work towards this goal.
+If you created a virtual environment, activate it by running:
+
+```bash
+source .venv/bin/activate
+```
+
+### Run the BDD tests
+
+To run the BDD tests, run:
+
+```bash
+cd hotel_reservations
+behave
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
