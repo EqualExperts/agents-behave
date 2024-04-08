@@ -22,6 +22,13 @@ To clone the repository, run the following command:
 git clone git@github.com:EqualExperts/agents-behave.git
 ```
 
+### Navigate to the project directory
+
+
+```bash
+cd agents-behave
+```
+
 ### (Optional) Create a virtual environment
 
 It's a good practice to use a virtual environment to avoid conflicts between project dependencies. To create a virtual environment, run:
