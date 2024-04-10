@@ -53,6 +53,12 @@ If you created a virtual environment, activate it by running:
 source .venv/bin/activate
 ```
 
+### Set up the environment variables
+
+```bash
+source .env
+```
+
 ### Run the BDD tests
 
 To run the BDD tests, run:

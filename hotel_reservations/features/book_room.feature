@@ -1,5 +1,6 @@
 Feature: Book a room in a hotel
 
+  @wip
   Scenario: A helpful user
      Given A user with the following persona:
         """
