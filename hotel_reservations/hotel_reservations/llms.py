@@ -88,13 +88,13 @@ LLM_NAMES = Literal[
     "openai-gpt-3.5",
     "openai-gpt-4",
     "openrouter-mixtral",
+    "openrouter-wizardlm2",
     "together-mixtral",
     "fireworks-firefunctions",
 ]
 
 
 class LLMManager:
-
     @staticmethod
     def create_llm(
         llm_name: LLM_NAMES, llm_config: LLMConfig = LLMConfig.default()
@@ -114,6 +114,12 @@ class LLMManager:
         elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(
                 llm_config.with_model("mistralai/mixtral-8x7b-instruct")
+            )
+        elif llm_name == "openrouter-wizardlm2":
+            return OpenRouterLLM(
+                llm_config.with_model(
+                    "microsoft/wizardlm-2-8x22b"
+                ).has_function_calling_support()
             )
         elif llm_name == "fireworks-firefunctions":
             return FireworksLLM(

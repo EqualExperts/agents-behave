@@ -19,7 +19,9 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
 
 
 def before_all(context):
-    context.open_ai_llm = create_llm("OpenAI", "openai-gpt-4")
-    context.openrouter_llm = create_llm("OpenRouter", "openrouter-mixtral")
+    llm = create_llm("OpenAI", "openai-gpt-4")
+    context.assistant_llm = llm
+    context.user_llm = llm
+    context.analyser_llm = llm
     context.date = date.today()
     context.hotels = []

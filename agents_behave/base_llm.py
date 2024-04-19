@@ -1,14 +1,16 @@
 from dataclasses import asdict, dataclass
+from typing import TypeVar, cast
 
 from langchain_core.language_models.base import BaseLanguageModel
 
+T = TypeVar('T', bound='Unionable')
 
 @dataclass
 class Unionable:
-    def __or__(self, other):
+    def __or__(self, other: T) -> T:
         other_without_none = {k: v for k, v in asdict(other).items() if v is not None}
-        return self.__class__(**(asdict(self) | other_without_none))
-
+        result = self.__class__(**(asdict(self) | other_without_none))
+        return cast(T, result)
 
 @dataclass
 class LLMConfig(Unionable):

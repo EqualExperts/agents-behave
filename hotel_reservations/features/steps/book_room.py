@@ -18,7 +18,7 @@ def format_date(date: str):
 @behave.given("A user with the following persona")
 def step_impl(context):  # noqa F811 # type: ignore
     context.llm_user = TestUser(
-        llm=context.openrouter_llm,
+        llm=context.user_llm,
         persona=context.text,
     )
 
@@ -47,7 +47,7 @@ def step_impl(context, stop_word):  # noqa F811 # type: ignore
     find_hotels_mock = Mock(find_hotels, return_value=find_hotels_return_value)
     current_date_mock = Mock(return_value=context.date)
     assistant = HotelReservationsAssistant(
-        llm=context.open_ai_llm,
+        llm=context.assistant_llm,
         make_reservation=make_reservation_mock,
         find_hotels=find_hotels_mock,
         current_date=current_date_mock,
@@ -97,7 +97,7 @@ def step_impl(context):  # noqa F811 # type: ignore
 def step_impl(context, minimum_acceptable_score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyser(llm=context.openrouter_llm)
+    conversationAnalyzer = ConversationAnalyser(llm=context.analyzer_llm)
     chat_history = context.conversation_state.chat_history
     response = conversationAnalyzer.analyse(
         chat_history=chat_history, criteria=criteria
