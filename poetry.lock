@@ -825,6 +825,25 @@ docs = ["Sphinx", "furo"]
 test = ["objgraph", "psutil"]
 
 [[package]]
+name = "groq"
+version = "0.5.0"
+description = "The official Python library for the groq API"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "groq-0.5.0-py3-none-any.whl", hash = "sha256:a7e6be1118bcdfea3ed071ec00f505a34d4e6ec28c435adb5a5afd33545683a1"},
+    {file = "groq-0.5.0.tar.gz", hash = "sha256:d476cdc3383b45d2a4dc1876142a9542e663ea1029f9e07a05de24f895cae48c"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<5"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+sniffio = "*"
+typing-extensions = ">=4.7,<5"
+
+[[package]]
 name = "gunicorn"
 version = "21.2.0"
 description = "WSGI HTTP Server for UNIX"
@@ -1133,6 +1152,21 @@ fireworks-ai = ">=0.13.0"
 langchain-core = ">=0.1.42,<0.2.0"
 openai = ">=1.10.0,<2.0.0"
 requests = ">=2,<3"
+
+[[package]]
+name = "langchain-groq"
+version = "0.1.2"
+description = "An integration package connecting Groq and LangChain"
+optional = false
+python-versions = "<4.0,>=3.8.1"
+files = [
+    {file = "langchain_groq-0.1.2-py3-none-any.whl", hash = "sha256:4a256247b13048424b3790df7d4b9d6c10b105821a1a36dbf3a8402c0454a243"},
+    {file = "langchain_groq-0.1.2.tar.gz", hash = "sha256:04d94f36910c39553134febfe2115f5301e002f31e2677a3483df3952a670740"},
+]
+
+[package.dependencies]
+groq = ">=0.4.1,<1"
+langchain-core = ">=0.1.42,<0.2.0"
 
 [[package]]
 name = "langchain-openai"
@@ -3007,4 +3041,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "69824034377772af7e217aa119784d3eb54a2f5854b2c4e30ffc43f5cffdc7da"
+content-hash = "ab7b977e0cbff04b2a9a46ab56722e1bd2a33564d60ba9121b98d9340da23929"

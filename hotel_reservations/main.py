@@ -26,8 +26,8 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
 
 def run(llm_name: LLM_NAMES):
     assistant_llm = create_llm("Assistant", llm_name)
-    user_llm = create_llm("User", "openrouter-mixtral")
-    conversation_analyser_llm = create_llm("ConversationAnalyser", "openrouter-mixtral")
+    user_llm = create_llm("User", llm_name)
+    conversation_analyser_llm = create_llm("ConversationAnalyser", llm_name)
 
     make_reservation_mock = Mock(make_reservation, return_value=True)
     find_hotels_return_value = [
@@ -86,5 +86,5 @@ def run(llm_name: LLM_NAMES):
 
 
 if __name__ == "__main__":
-    llm_name = sys.argv[1]
+    llm_name = sys.argv[1] if len(sys.argv) > 1 else "groq-llama3"
     run(cast(LLM_NAMES, llm_name))

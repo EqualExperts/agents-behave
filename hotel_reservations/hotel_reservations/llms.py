@@ -1,9 +1,30 @@
 import os
 from typing import Literal, Optional
 
+from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
 from agents_behave.base_llm import BaseLLM, LLMConfig
+
+LLM_NAMES = Literal[
+    "openai-gpt-4",
+    "openai-gpt-3.5",
+    "groq-llama3",
+    "openrouter-mixtral",
+    "openrouter-wizardlm2",
+    "together-mixtral",
+    "fireworks-firefunctions",
+]
+
+
+def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
+    return LLMManager.create_llm(
+        llm_name=llm_name,
+        llm_config=LLMConfig(
+            name=name,
+            temperature=0.0,
+        ),
+    )
 
 
 class OpenAILLM(BaseLLM):
@@ -13,6 +34,20 @@ class OpenAILLM(BaseLLM):
     ):
         llm_config = LLMConfig(model="gpt-3.5-turbo") | llm_config
         llm = ChatOpenAI(
+            model=llm_config.model or "",
+            temperature=0.0,
+        )
+
+        super().__init__(llm_config, llm)
+
+
+class GroqLLM(BaseLLM):
+    def __init__(
+        self,
+        llm_config: LLMConfig,
+    ):
+        llm_config = LLMConfig(model="llama3-70b-8192") | llm_config
+        llm = ChatGroq(
             model=llm_config.model or "",
             temperature=0.0,
         )
@@ -84,16 +119,6 @@ class FireworksLLM(BaseChatOpenAI):
         super().__init__(llm_config)
 
 
-LLM_NAMES = Literal[
-    "openai-gpt-3.5",
-    "openai-gpt-4",
-    "openrouter-mixtral",
-    "openrouter-wizardlm2",
-    "together-mixtral",
-    "fireworks-firefunctions",
-]
-
-
 class LLMManager:
     @staticmethod
     def create_llm(
@@ -104,12 +129,15 @@ class LLMManager:
             return OpenAILLM(
                 llm_config.with_model("gpt-3.5-turbo").has_function_calling_support()
             )
-
         elif llm_name == "openai-gpt-4":
             return OpenAILLM(
                 llm_config.with_model(
                     "gpt-4-turbo-preview"
                 ).has_function_calling_support()
+            )
+        elif llm_name == "groq-llama3":
+            return GroqLLM(
+                llm_config.with_model("llama3-70b-8192").has_function_calling_support()
             )
         elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(

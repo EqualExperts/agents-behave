@@ -1,11 +1,8 @@
 from datetime import date
 from typing import Any
 
-from langchain.agents import AgentExecutor
-from langchain.agents.format_scratchpad import (
-    format_log_to_str,
-    format_to_openai_function_messages,
-)
+from langchain.agents import AgentExecutor, create_tool_calling_agent
+from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.render import render_text_description_and_args
@@ -13,15 +10,11 @@ from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.tools import tool
-from langchain_core.utils.function_calling import convert_to_openai_function
 
 from agents_behave.base_llm import BaseLLM
 from hotel_reservations.core import FindHotels, MakeReservation
 from hotel_reservations.function_call_agent_output_parser import (
     FunctionCallAgentOutputParser,
-)
-from hotel_reservations.openai_functions_copy import (
-    OpenAIFunctionsAgentOutputParserCopy,
 )
 
 
@@ -71,6 +64,7 @@ class HotelReservationsAssistant:
             return_intermediate_steps=True,
             handle_parsing_errors=True,
             max_iterations=5,
+            stream_runnable=False,  # This is mandatory for the agent to work with Groq
         )
 
     def build_agent_with_function_calling(self, llm: BaseLanguageModel, tools: list):
@@ -85,19 +79,8 @@ class HotelReservationsAssistant:
             current_date=self.current_date().strftime("%Y-%m-%d"),
         )
 
-        functions = [convert_to_openai_function(tool) for tool in tools]
-        llm_with_tools = llm.bind(functions=functions)
-
-        return (
-            RunnablePassthrough.assign(
-                agent_scratchpad=lambda x: format_to_openai_function_messages(
-                    x["intermediate_steps"]
-                )
-            )
-            | prompt
-            | llm_with_tools
-            | OpenAIFunctionsAgentOutputParserCopy()
-        )
+        agent = create_tool_calling_agent(llm, tools, prompt)
+        return agent
 
     def build_agent_without_function_calling(self, llm: BaseLanguageModel, tools: list):
         prompt = ChatPromptTemplate.from_messages(

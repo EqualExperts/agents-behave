@@ -19,7 +19,7 @@ def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
 
 
 def before_all(context):
-    llm = create_llm("OpenAI", "openai-gpt-4")
+    llm = create_llm("llama3", "groq-llama3")
     context.assistant_llm = llm
     context.user_llm = llm
     context.analyser_llm = llm

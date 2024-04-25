@@ -97,7 +97,7 @@ def step_impl(context):  # noqa F811 # type: ignore
 def step_impl(context, minimum_acceptable_score):  # noqa F811 # type: ignore
     criteria = context.text.split("\n")
     criteria = [c.strip() for c in criteria if c.strip()]
-    conversationAnalyzer = ConversationAnalyser(llm=context.analyzer_llm)
+    conversationAnalyzer = ConversationAnalyser(llm=context.analyser_llm)
     chat_history = context.conversation_state.chat_history
     response = conversationAnalyzer.analyse(
         chat_history=chat_history, criteria=criteria
