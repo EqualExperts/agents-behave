@@ -86,5 +86,5 @@ def run(llm_name: LLM_NAMES):
 
 
 if __name__ == "__main__":
-    llm_name = sys.argv[1] if len(sys.argv) > 1 else "groq-llama3"
+    llm_name = sys.argv[1] if len(sys.argv) > 1 else "groq-llama3-70"
     run(cast(LLM_NAMES, llm_name))

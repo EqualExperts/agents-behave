@@ -1,6 +1,7 @@
 import os
 from typing import Literal, Optional
 
+from langchain_community.chat_models import ChatOllama
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
@@ -9,7 +10,9 @@ from agents_behave.base_llm import BaseLLM, LLMConfig
 LLM_NAMES = Literal[
     "openai-gpt-4",
     "openai-gpt-3.5",
-    "groq-llama3",
+    "groq-llama3-70",
+    "groq-llama3-8",
+    "ollama-llama3-8",
     "openrouter-mixtral",
     "openrouter-wizardlm2",
     "together-mixtral",
@@ -48,6 +51,20 @@ class GroqLLM(BaseLLM):
     ):
         llm_config = LLMConfig(model="llama3-70b-8192") | llm_config
         llm = ChatGroq(
+            model=llm_config.model or "",
+            temperature=0.0,
+        )
+
+        super().__init__(llm_config, llm)
+
+
+class OllamaLLM(BaseLLM):
+    def __init__(
+        self,
+        llm_config: LLMConfig,
+    ):
+        llm_config = LLMConfig(model="llama3") | llm_config
+        llm = ChatOllama(
             model=llm_config.model or "",
             temperature=0.0,
         )
@@ -135,10 +152,16 @@ class LLMManager:
                     "gpt-4-turbo-preview"
                 ).has_function_calling_support()
             )
-        elif llm_name == "groq-llama3":
+        elif llm_name == "groq-llama3-70":
             return GroqLLM(
                 llm_config.with_model("llama3-70b-8192").has_function_calling_support()
             )
+        elif llm_name == "groq-llama3-8":
+            return GroqLLM(
+                llm_config.with_model("llama3-8b-8192").has_function_calling_support()
+            )
+        elif llm_name == "ollama-llama3-8":
+            return OllamaLLM(llm_config.with_model("llama3"))
         elif llm_name == "openrouter-mixtral":
             return OpenRouterLLM(
                 llm_config.with_model("mistralai/mixtral-8x7b-instruct")
