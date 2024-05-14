@@ -12,7 +12,7 @@ from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMManager
 
-load_dotenv()
+load_dotenv(override=True)
 
 verbose = True
 

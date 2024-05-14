@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI
 from agents_behave.base_llm import BaseLLM, LLMConfig
 
 LLM_NAMES = Literal[
+    "openai-gpt-4o",
     "openai-gpt-4",
     "openai-gpt-3.5",
     "groq-llama3-70",
@@ -150,6 +151,12 @@ class LLMManager:
             return OpenAILLM(
                 llm_config.with_model(
                     "gpt-4-turbo-preview"
+                ).has_function_calling_support()
+            )
+        elif llm_name == "openai-gpt-4o":
+            return OpenAILLM(
+                llm_config.with_model(
+                    "gpt-4o"
                 ).has_function_calling_support()
             )
         elif llm_name == "groq-llama3-70":

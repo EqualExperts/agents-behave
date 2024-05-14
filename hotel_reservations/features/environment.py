@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from agents_behave.base_llm import LLMConfig
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMManager
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:

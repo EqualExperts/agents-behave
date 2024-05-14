@@ -11,7 +11,7 @@ from hotel_reservations.assistant import HotelReservationsAssistant
 from hotel_reservations.core import Hotel, find_hotels, make_reservation
 from hotel_reservations.llms import LLM_NAMES, BaseLLM, LLMConfig, LLMManager
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def create_llm(name: str, llm_name: LLM_NAMES) -> BaseLLM:
@@ -86,5 +86,5 @@ def run(llm_name: LLM_NAMES):
 
 
 if __name__ == "__main__":
-    llm_name = sys.argv[1] if len(sys.argv) > 1 else "groq-llama3-70"
+    llm_name = sys.argv[1] if len(sys.argv) > 1 else "openai-gpt-4o"
     run(cast(LLM_NAMES, llm_name))
