@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the source code and resources used in the blog post titled "[Testing Conversational Assistants Using BDD](https://equalexperts.blogin.co/posts/testing-conversational-assistants-using-bdd-256119)". The aim of this project is to provide a practical example to accompany the concepts and solutions discussed in the blog post.
+This repository contains the source code and resources used in the blog post titled "[Testing Conversational Assistants Using BDD](https://www.equalexperts.com/blog/ai/how-to-test-conversational-assistants-using-behaviour-driven-development/)". The aim of this project is to provide a practical example to accompany the concepts and solutions discussed in the blog post.
 
 ## Disclaimer
 
